@@ -8,5 +8,15 @@
 
 int main(int argc,char *argv[])
 {
-return 0;
+  FILE *fp;
+  char line[100];
+
+  // initialsing the file pointer to read
+  fp = fopen(argv[2],"r");
+
+  int i;
+	for (i = 2; i < argc; i++) {
+  }
+
+  return 0;
 }
