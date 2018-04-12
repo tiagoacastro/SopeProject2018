@@ -14,20 +14,14 @@ int main(int argc,char *argv[])
     exit(1);
   }
 
-  if(strcmp(argv[1], "simpgrep") != 0){
-    printf("Unknown command\n");
-    exit(2);
-  }
-
   FILE *fp;
 
   // initialsing the file pointer to read
   if((fp = fopen(argv[argc-1],"r"))==NULL){
     printf("Could not open text file\n");
-    exit(3);
+    exit(2);
   }
 
-  char* line = NULL;
   int   i = 0;
   int   l = 0;
   int   n = 0;
@@ -39,7 +33,7 @@ int main(int argc,char *argv[])
   char* pattern = strdup(argv[argc-2]);
 
   //flags
-	for (int j = 2; j < argc-2; j++) {
+	for (int j = 1; j < argc-2; j++) {
       if(strcmp(argv[j], "-i") == 0){
         i = 1;
       } else if (strcmp(argv[j], "-l") == 0){
@@ -55,34 +49,72 @@ int main(int argc,char *argv[])
       }
   }
 
-  if(w){
-    pattern = (char *)realloc(pattern, sizeof(pattern)+2*sizeof(char));
-    char* space = strdup(" ");
-    strcat(space, pattern);
-    strcpy(pattern, space);
-    space = strdup(" ");
-    strcat(pattern, space);
-  }
-
   size_t len = 0;
+  char* line = NULL;
+  char* lineCopy = NULL;
+  char* pch = NULL;
+  int lines = 0;
+  int linesFound = 0;
 
   while (getline(&line, &len, fp) != -1) {
-    if(!i){
-      if(strstr(line, pattern) != NULL) {
-        printf("%s", line);
+    lines++;
+    if(!w){
+      if(!i){
+        if(strstr(line, pattern) != NULL) {
+          if(n)
+            printf("%d:", lines);
+          printf("%s", line);
+          linesFound++;
+        }
+      }else{
+        if(strcasestr(line, pattern) != NULL) {
+          if(n)
+            printf("%d:", lines);
+          printf("%s", line);
+          linesFound++;
+        }
       }
-    }else{
-      if(strcasestr(line, pattern) != NULL) {
-        printf("%s", line);
+    } else {
+      lineCopy = strdup(line);
+      pch = strtok (lineCopy," ,.-");
+      while (pch != NULL)
+      {
+        if(!i){
+          if(strcmp(pch, pattern) == 0) {
+            if(n)
+              printf("%d:", lines);
+            printf("%s", line);
+            linesFound++;
+            break;
+          }
+        }else{
+          if(strcasecmp(pch, pattern) == 0) {
+            if(n)
+              printf("%d:", lines);
+            printf("%s", line);
+            linesFound++;
+            break;
+          }
+        }
+        pch = strtok (NULL, " ,.-");
       }
     }
-   }
+  }
+
+  if(c)
+    printf("string found in %d lines\n", linesFound);
 
   fclose(fp);
-
+/*
   if(line)
     free(line);
 
+  if(lineCopy)
+    free(lineCopy);
+
+  if(pch)
+    free(pch);
+*/
   free(pattern);
 
   return 0;
