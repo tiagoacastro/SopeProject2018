@@ -9,27 +9,20 @@
 
 int main(int argc,char *argv[])
 {
-  if(argc < 3){
-    printf("Wrong number of arguments\n");
+  if (checkArguments(argc) == 1)
     exit(1);
-  }
 
-  FILE *fp;
-
-  // initialsing the file pointer to read
-  if((fp = fopen(argv[argc-1],"r"))==NULL){
-    printf("Could not open text file\n");
+  if (initializeFile(argc, argv) == null)
     exit(2);
-  }
 
-  int   i = 0;
-  int   l = 0;
-  int   n = 0;
-  int   c = 0;
-  int   w = 0;
-  int   r = 0;
+  int i = 0;
+  int l = 0;
+  int n = 0;
+  int c = 0;
+  int w = 0;
+  int r = 0;
 
-  //pattern
+  //Duplicates the string passed as argument
   char* pattern = strdup(argv[argc-2]);
 
   //flags
@@ -118,4 +111,21 @@ int main(int argc,char *argv[])
   free(pattern);
 
   return 0;
+}
+
+int checkArguments(int argc){
+  if(argc < 3){
+    printf("Wrong number of arguments\n");
+    return 1;
+  }
+}
+
+FILE * initializeFile(int argc, char *argv[]){
+
+  FILE *fp;
+  // initialsing the file pointer to read
+  if((fp = fopen(argv[argc-1],"r"))==NULL){
+    printf("Could not open text file\n");
+    return null;
+  } else return fp;
 }
