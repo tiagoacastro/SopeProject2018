@@ -1,5 +1,5 @@
 client: client.c
-	gcc -Wall client.c -o client
+	gcc -D_REENTRANT -pthread -Wall client.c -o client
 
 server: server.c
-	gcc -Wall server.c -o server
+	gcc -D_REENTRANT -pthread -Wall server.c -o server
