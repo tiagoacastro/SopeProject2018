@@ -9,7 +9,11 @@
 int readline(int fd, char *str);
 void *office(void *arg);
 
+int reading;
+unsigned int open_time;
+
 int main(int argc,char *argv[], char* env[]){
+  reading = 0;
 
   if(argc != 4){
     printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <open_time>\n");
@@ -23,7 +27,7 @@ int main(int argc,char *argv[], char* env[]){
 
   unsigned int seats = argv[1];
   unsigned int nOffices = argv[2];
-  unsigned int open_time = argv[3];
+  open_time = argv[3];
 
   mkfifo("requests", 0660);
   int fd = open("requests", O_RDONLY);
@@ -40,19 +44,26 @@ int main(int argc,char *argv[], char* env[]){
 }
 
 int readline(int fd, char *str){
+  reading = 1;
   int n;
   do{
     n = read(fd,str,1);
   }
   while (n>0 && *str++ != '\0');
+  reading = 0;
   return (n>0);
 }
 
 void *office(void *arg){
   int fd = arg;
+  int count = 0;
   char str[200];
-  while(readline(fd,str)){
-    printf("%s",str);
+  while(count < open_time*60){
+    if(!reading){
+      readline(fd,str);
+      printf("%s",str);
+    }
+    count++;
   }
   return NULL;
 }
