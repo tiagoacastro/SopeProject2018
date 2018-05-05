@@ -29,8 +29,16 @@ int main(int argc,char *argv[], char* env[]){
   unsigned int nOffices = argv[2];
   open_time = argv[3];
 
-  mkfifo("requests", 0660);
-  int fd = open("requests", O_RDONLY);
+  if(mkfifo("requests", 0660) == -1){
+    printf("Error creating requests FIFO");
+    return -3;
+  }
+
+  int fd;
+  if((fd = open("requests", O_RDONLY)) == -1){
+    printf("Error opening FIFO");
+    return -4;
+  }
 
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_t office;
@@ -41,17 +49,6 @@ int main(int argc,char *argv[], char* env[]){
   close(fd);
 
   return 0;
-}
-
-int readline(int fd, char *str){
-  reading = 1;
-  int n;
-  do{
-    n = read(fd,str,1);
-  }
-  while (n>0 && *str++ != '\0');
-  reading = 0;
-  return (n>0);
 }
 
 void *office(void *arg){
@@ -66,4 +63,15 @@ void *office(void *arg){
     count++;
   }
   return NULL;
+}
+
+int readline(int fd, char *str){
+  reading = 1;
+  int n;
+  do{
+    n = read(fd,str,1);
+  }
+  while (n>0 && *str++ != '\0');
+  reading = 0;
+  return (n>0);
 }
