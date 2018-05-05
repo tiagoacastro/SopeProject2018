@@ -1,6 +1,9 @@
 Instructions:
 
 1-  make
-2-  ./start config.txt
+2-  abrir um terminal, e correr no diretorio do projeto ./server <num_room_seats> <num_ticket_offices> <open_time>
+3-  abrir um segundo terminal, e correr no diretorio do projeto ./start config.txt
+
+to stop any of the programs:  ^C
 
 to clean do:  make clean

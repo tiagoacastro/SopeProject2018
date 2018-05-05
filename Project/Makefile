@@ -9,7 +9,7 @@ client: client.c
 	gcc -Wall client.c -o client
 
 server: server.c
-	gcc -D_REENTRANT -pthread -Wall start.c -o server
+	gcc -D_REENTRANT -pthread -Wall server.c -o server
 
 clean:
 	rm -rf start client server
