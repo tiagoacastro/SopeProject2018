@@ -1,0 +1,6 @@
+Instructions:
+
+1-  make
+2-  ./start config.txt
+
+to clean do:  make clean
