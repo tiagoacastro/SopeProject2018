@@ -48,6 +48,8 @@ int main(int argc,char *argv[], char* env[]){
 
   close(fd);
 
+  system("find . -type p -delete");
+
   return 0;
 }
 
