@@ -1,22 +1,19 @@
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <stdlib.h>
-
-int readline(int fd, char *str);
-void *office(void *arg);
+#include "server.h"
 
 int reading;
 unsigned int open_time;
 
-int main(int argc,char *argv[], char* env[]){
+int timesUp = 0;
+
+void myHandler(int mySignal) {
+  timesUp = 1;
+}
+
+int main(int argc, char *argv[], char* env[]){
   reading = 0;
 
   if(argc != 4){
-    printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <open_time>\n");
+    printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <timeout>\n");
     return -1;
   }
 
@@ -27,7 +24,7 @@ int main(int argc,char *argv[], char* env[]){
 
   unsigned int seats = argv[1];
   unsigned int nOffices = argv[2];
-  open_time = argv[3];
+  unsigned int timeout = argv[3];
 
   if(mkfifo("requests", 0660) == -1){
     printf("Error creating requests FIFO");
@@ -40,11 +37,19 @@ int main(int argc,char *argv[], char* env[]){
     return -4;
   }
 
+  Seat *seats_arr[seats];
+
+  for(unsigned int j = 0; j < seats; j++){
+
+    seats_arr[j]->available = 0;
+  }
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_t office;
-    pthread_create(&office, NULL, office, fd);
-    pthread_exit(NULL);
+    pthread_create(&office, NULL, office, NULL);
   }
+
+  signal(SIGALRM, myHandler);
+  alarm(timeout);
 
   close(fd);
 
@@ -60,7 +65,8 @@ void *office(void *arg){
   while(count < open_time*60){
     if(!reading){
       readline(fd,str);
-      printf("%s",str);
+
+
     }
     count++;
   }
@@ -77,3 +83,22 @@ int readline(int fd, char *str){
   reading = 0;
   return (n>0);
 }
+
+/*
+int isSeatFree(Seat *seats, int seatNum){
+
+  return (seats[seatNum]->available);
+}
+
+void bookSeat(Seat *seats, int seatNum, int clientId){
+
+  seats[seatNum]->clientId = clientId;
+  seats[seatNum]->available = 1;
+}
+
+void freeSeat(Seat *seats, int seatNum) {
+
+  seats[seatNum]->available = 0;
+}
+
+*/

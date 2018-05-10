@@ -39,12 +39,13 @@ int main(int argc, char *argv[]) {
   }
 
   int status = open(sn, O_RDONLY);
+
   if(status == -1){
     printf("Error opening status FIFO\n");
     return -2;
   }
 
-  char* ret;
+  /*char* ret;
   char temp[100];
   time_t endwait;
   time_t start = time(NULL);
@@ -56,6 +57,7 @@ int main(int argc, char *argv[]) {
       ret = fgets(temp, 100, status);
       start = time(NULL);
   }
+  */
 
   close(status);
 
