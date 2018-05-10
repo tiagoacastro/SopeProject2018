@@ -31,18 +31,19 @@ int main(int argc, char *argv[], char* env[]){
     return -3;
   }
 
-  int fd;
-  if((fd = open("requests", O_RDONLY)) == -1){
+  int fd = open("requests", O_RDONLY);
+
+  if(fd == -1){
     printf("Error opening FIFO");
     return -4;
   }
 
-  Seat *seats_arr[seats];
+  struct Seat seatsArr[seats];
 
   for(unsigned int j = 0; j < seats; j++){
-
-    seats_arr[j]->available = 0;
+    seatsArr->available = 0;
   }
+
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_t office;
     pthread_create(&office, NULL, office, NULL);
@@ -55,6 +56,8 @@ int main(int argc, char *argv[], char* env[]){
 
   system("find . -type p -delete");
 
+  free(seatsArr);
+
   return 0;
 }
 
@@ -65,8 +68,6 @@ void *office(void *arg){
   while(count < open_time*60){
     if(!reading){
       readline(fd,str);
-
-
     }
     count++;
   }
