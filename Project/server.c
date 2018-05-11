@@ -12,6 +12,7 @@ void myHandler(int mySignal) {
 int main(int argc, char *argv[], char* env[]){
   reading = 0;
 
+  printf("hello");
   if(argc != 4){
     printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <timeout>\n");
     return -1;
@@ -38,10 +39,10 @@ int main(int argc, char *argv[], char* env[]){
     return -4;
   }
 
-  struct Seat seatsArr[seats];
+  Seat seatsArr[seats];
 
   for(unsigned int j = 0; j < seats; j++){
-    seatsArr->available = 0;
+    seatsArr[j].available = 0;
   }
 
   for (unsigned int i = 0; i < nOffices; i++) {
