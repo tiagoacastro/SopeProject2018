@@ -13,8 +13,4 @@ typedef struct {
 } Seat;
 
 int readline(int fd, char *str);
-void *office(void *arg);
-int isSeatFree(Seat  *seats, int seatNum);
-void bookSeat(Seat *seats, int seatNum, int clientId);
-void freeSeat(Seat *seats, int seatNum);
-void myHandler(int mySignal);
+void *officeHandler(void *arg);
