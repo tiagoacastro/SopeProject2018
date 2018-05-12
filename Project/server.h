@@ -10,6 +10,7 @@
 
 #define MAX_ROOM_SEATS  9999
 #define MAX_CLI_SEATS   99
+#define DELAY()         sleep(1)
 
 typedef struct {
   int clientPid;
@@ -25,6 +26,6 @@ typedef struct {
 void *officeHandler(void *arg);
 void alarmHandler(int sig);
 void requestHandler(int fd);
-int isSeatFree(int seatNum);
-void bookSeat(int seatNum, int clientId);
-void freeSeat(int seatNum); 
+int isSeatFree(Seat *seats, int seatNum);
+void bookSeat(Seat *seats, int seatNum, int clientId);
+void freeSeat(Seat *seats, int seatNum);
