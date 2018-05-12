@@ -3,6 +3,8 @@
 int reading;
 unsigned int open_time;
 
+Seat * seats;
+
 int main(int argc,char *argv[], char* env[]){
   reading = 0;
 
@@ -19,6 +21,8 @@ printf("27\n");
   unsigned int seats = argv[1];
   unsigned int nOffices = argv[2];
   open_time = argv[3];
+
+  allocateSeats(seats);
 
   if(mkfifo("requests", 0660) == -1){
     printf("Error creating requests FIFO");
@@ -39,6 +43,20 @@ printf("48\n");
   close(fd);
 
   //system("find . -type p -delete");
+
+  free(seats);
+  return 0;
+}
+
+int allocateSeats(unsigned int seatsNum){
+
+    int i;
+    seats = (Seat *)malloc(seatsNum*sizeof(Seat));
+
+    if(seats == NULL){
+    printf("problemo allocating");
+    return -1;
+  }
 
   return 0;
 }

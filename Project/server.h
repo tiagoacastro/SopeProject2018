@@ -14,3 +14,4 @@ typedef struct {
 
 int readline(int fd, char *str);
 void *officeHandler(void *arg);
+int allocateSeats(unsigned int seatsNum);
