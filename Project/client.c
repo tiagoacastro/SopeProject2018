@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     return -3;
   }
 
-  Request* r = (Request*)malloc(sizeof(Request));
+  Request* r = malloc(sizeof(Request));
   r->pid = pid;
   r->seats = atoi(argv[2]);
   char seats[250];
@@ -42,7 +42,8 @@ int main(int argc, char *argv[]) {
     i++;
     token = strtok(NULL, " ");
   }
-  write(requests,r,sizeof(Request*));
+  printf("%d\n",r->pid);
+  write(requests,r,sizeof(Request));
 
   close(requests);
   free(r);

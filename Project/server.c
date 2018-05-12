@@ -3,7 +3,7 @@
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static Seat room[MAX_ROOM_SEATS];
 static int timeout = 0;
-static Request* request = NULL;
+static Request* request;
 static int newRequest = 0;
 static unsigned int seats;
 
@@ -13,6 +13,7 @@ void alarmHandler(int sig) {
 }
 
 int main(int argc,char *argv[], char* env[]){
+printf("16\n");
   if(argc != 4){
     printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <open_time>\n");
     return -1;
@@ -39,7 +40,7 @@ int main(int argc,char *argv[], char* env[]){
     printf("Error creating requests FIFO");
     return -4;
   }
-
+printf("43\n");
   int fd = open("requests", O_RDONLY | O_NONBLOCK);
   if(fd == -1){
     printf("Error opening FIFO");
@@ -50,7 +51,7 @@ int main(int argc,char *argv[], char* env[]){
     room[i].clientPid = -1;
     room[i].available = 1;
   }
-
+printf("54\n");
   pthread_t offices[nOffices];
   int threadErr;
   for(unsigned int t = 0; t < nOffices; t++) {
@@ -59,21 +60,25 @@ int main(int argc,char *argv[], char* env[]){
           exit(1);
       }
   }
-
-  Request* r = (Request*)malloc(sizeof(Request));
+printf("63\n");
+  unsigned int ret = -1;
+  Request* r = malloc(sizeof(Request));
   do {
-    r=read(fd,r,sizeof(Request*));
-    if (r != NULL) {
+    ret = read(fd,r,sizeof(Request));
+    if (ret > 0) {
       request = r;
+      printf("%d\n",69);
+      printf("%d\n",request->pid);
+      printf("%d\n",70);
+
       newRequest = 1;
     }
   } while (!timeout);
-
+printf("72\n");
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_join(offices[i], NULL);
   }
-
-  free(r);
+printf("76\n");
   close(fd);
   remove("requests");
 
@@ -86,17 +91,18 @@ void *officeHandler(void *arg){
       sleep(1);
       break;
     }
-
     pthread_mutex_lock(&mutex);
     if(newRequest){
       newRequest = 0;
 
       char sn[12];
+printf("94\n");
       sprintf(sn, "ans%d", request->pid);
-      int fd = open("sn", O_WRONLY);
-
+printf("96\n");
+      int fd = open(sn, O_WRONLY | O_NONBLOCK);
+printf("98\n");
       requestHandler(fd);
-
+printf("100\n");
       close(fd);
     }
     pthread_mutex_unlock(&mutex);
