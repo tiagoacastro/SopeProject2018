@@ -4,6 +4,11 @@ FILE * clogFile = NULL;
 FILE * bookFile = NULL;
 static int timeout = 0;
 
+void alarmHandler(int sig) {
+    printf("Time's up! \n");
+    timeout = 1;
+}
+
 int main(int argc, char *argv[]) {
   int pid = getpid();
   printf("** Running process %d (PGID %d) **\n", pid, getpgrp());
@@ -11,7 +16,10 @@ int main(int argc, char *argv[]) {
   if (argc == 4)
     printf("ARGS: %s | %s | %s\n", argv[1], argv[2], argv[3]);
 
-  timeout = atoi(argv[1]);
+  unsigned int endTime = atoi(argv[1]);
+
+  alarm((unsigned int) endTime);
+  signal(SIGALRM, alarmHandler);
 
   //send request
   int requests = open("requests", O_WRONLY);

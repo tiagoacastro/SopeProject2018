@@ -5,11 +5,12 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #define WIDTH_PID       5
 #define WIDTH_XXNN      5
 #define WIDTH_SEAT      4
-#define MAX_CLI_SEATS   99  
+#define MAX_CLI_SEATS   99
 
 typedef struct {
   int pid;
@@ -20,3 +21,4 @@ typedef struct {
 int writeToClog(char* status);
 int writeToBook(int nrseat);
 int writeError(char error[]);
+void alarmHandler(int sig);

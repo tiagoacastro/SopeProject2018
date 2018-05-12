@@ -8,6 +8,7 @@ static int newRequest = 0;
 static unsigned int seats;
 
 void alarmHandler(int sig) {
+    printf("Time's up! \n");
     timeout = 1;
 }
 
@@ -29,7 +30,10 @@ int main(int argc,char *argv[], char* env[]){
 
   seats = atoi(argv[1]);
   unsigned int nOffices = atoi(argv[2]);
-  unsigned int timeout = atoi(argv[3]);
+  unsigned int endTime = atoi(argv[3]);
+
+  alarm((unsigned int) endTime);
+  signal(SIGALRM, alarmHandler);
 
   if(mkfifo("requests", 0660) == -1){
     printf("Error creating requests FIFO");
@@ -46,9 +50,6 @@ int main(int argc,char *argv[], char* env[]){
     room[i].clientPid = -1;
     room[i].available = 1;
   }
-
-  signal(SIGALRM, alarmHandler);
-  alarm((unsigned int) timeout);
 
   pthread_t offices[nOffices];
   int threadErr;
@@ -143,4 +144,21 @@ void requestHandler(int fd){
     write(fd,"-6",2);
     return;
   }
+}
+
+int isSeatFree(Seat *seats, int seatNum){
+
+  return (seats[seatNum].available);
+}
+
+void bookSeat(Seat *seats, int seatNum, int clientId){
+
+  seats[seatNum].clientPid = clientId;
+  seats[seatNum].available = 1;
+}
+
+void freeSeat(Seat *seats, int seatNum) {
+
+  seats[seatNum].available = 0;
+  seats[seatNum].clientPid = -1;
 }
