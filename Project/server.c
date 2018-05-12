@@ -135,7 +135,7 @@ void requestHandler(int fd){
 
   int full=1;
   for (unsigned int i = 0; i < seats; i++) {
-    if(room[i].available){
+    if(isSeatFree(i)){
       full = 0;
       break;
     }
@@ -144,21 +144,51 @@ void requestHandler(int fd){
     write(fd,"-6",2);
     return;
   }
+
+  int booked = 0;
+  int bookedSeats[request->seats];
+  for(unsigned int i = 0; i < request->seats; i++)
+    bookedSeats[i] = -1;
+
+  for (unsigned int i = 0; i < count; i++) {
+    if (isSeatFree(request->seatList[i]-1)) {
+      bookSeat(request->seatList[i]-1, request->pid);
+      bookedSeats[booked] = request->seatList[i]-1;
+      booked++;
+      if(booked == request->seats)
+          break;
+    }
+  }
+
+  if(booked < request->seats){
+    for (unsigned int i = 0; i < request->seats; i++) {
+      if(bookedSeats[i] != -1)
+        freeSeat(bookedSeats[i]);
+    }
+    write(fd,"-5",2);
+    return;
+  }
+
+  char message[250];
+  char seat[5];
+  sprintf(message, "%d", request->pid);
+  for (unsigned int i = 0; i < count; i++) {
+    sprintf(message, " %d", request->seatList[i]);
+    strcat(message, seat);
+  }
+  write(fd,message,250);
 }
 
-int isSeatFree(Seat *seats, int seatNum){
-
-  return (seats[seatNum].available);
+int isSeatFree(int seatNum){
+  return (room[seatNum].available);
 }
 
-void bookSeat(Seat *seats, int seatNum, int clientId){
-
-  seats[seatNum].clientPid = clientId;
-  seats[seatNum].available = 1;
+void bookSeat(int seatNum, int clientId){
+  room[seatNum].clientPid = clientId;
+  room[seatNum].available = 0;
 }
 
-void freeSeat(Seat *seats, int seatNum) {
-
-  seats[seatNum].available = 0;
-  seats[seatNum].clientPid = -1;
+void freeSeat(int seatNum) {
+  room[seatNum].available = 1;
+  room[seatNum].clientPid = -1;
 }

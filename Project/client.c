@@ -5,7 +5,6 @@ FILE * bookFile = NULL;
 static int timeout = 0;
 
 void alarmHandler(int sig) {
-    printf("Time's up! \n");
     timeout = 1;
 }
 
@@ -61,23 +60,18 @@ int main(int argc, char *argv[]) {
     printf("Error opening status FIFO\n");
     return -2;
   }
-  /*
-  ssize_t ret;
-  char temp[250];
-  time_t endwait;
-  time_t start = time(NULL);
-  time_t seconds = argv[1];
-  endwait = start + seconds;
 
-  while (start < endwait && ret < 0)
+  ssize_t ret;
+  char msg[250];
+
+  while (ret < 0 && !timeout)
   {
-      ret = read(status, temp, 250);
-      start = time(NULL);
+      ret = read(status, msg, 250);
   }
 
   if(ret >= 0)
-    writeToClog(temp);
-  */
+    writeToClog(msg);
+
   close(status);
   remove(sn);
 
