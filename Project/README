@@ -7,3 +7,5 @@ Instructions:
 to stop any of the programs:  ^C
 
 to clean do:  make clean
+
+to delete the fifos: find . -type p -delete 

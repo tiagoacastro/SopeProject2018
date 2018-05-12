@@ -1,13 +1,12 @@
 #include "server.h"
 
-int reading;
-unsigned int open_time;
-
-Seat * seats;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static Seat room[MAX_ROOM_SEATS];
+static int timeout = 0;
+static Request* request = NULL;
+static newRequest = 0;
 
 int main(int argc,char *argv[], char* env[]){
-  reading = 0;
-
   if(argc != 4){
     printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <open_time>\n");
     return -1;
@@ -17,51 +16,62 @@ int main(int argc,char *argv[], char* env[]){
     printf("argument values not acceptable, must be positive integers\n");
     return -2;
   }
-printf("27\n");
-  unsigned int seats = argv[1];
-  unsigned int nOffices = argv[2];
-  open_time = argv[3];
 
-  allocateSeats(seats);
+  if(atoi(argv[1]) > MAX_ROOM_SEATS){
+    printf("Number of seats is too high");
+    return -3;
+  }
+
+  unsigned int seats = atoi(argv[1]);
+  unsigned int nOffices = atoi(argv[2]);
+  unsigned int timeout = atoi(argv[3]);
 
   if(mkfifo("requests", 0660) == -1){
     printf("Error creating requests FIFO");
     return -3;
   }
-printf("36\n");
+
   int fd;
-  if((fd = open("requests", O_RDONLY)) == -1){
+  if((fd = open("requests", O_RDONLY | O_NONBLOCK)) == -1){
     printf("Error opening FIFO");
     return -4;
   }
-printf("42\n");
+
+  for(unsigned int i = 0; i < MAX_ROOM_SEATS; i++){
+    room[i].clientPid = -1;
+    room[i].available = 1;
+  }
+
+  pthread_t offices[nOffices];
+  int threadErr;
+  for(unsigned int t = 0; t < nOffices; t++) {
+      threadErr = pthread_create(&offices[t], NULL, officeHandler, fd);
+      if (threadErr) {
+          exit(1);
+      }
+  }
+
+  Request* r = (Request*)malloc(sizeof(Request));
+  do {
+    r=read(fd,r,sizeof(Request*));
+    if (r != NULL) {
+      request = r;
+      newRequest = 1;
+    }
+  } while (!timeout);
+
   for (unsigned int i = 0; i < nOffices; i++) {
-    pthread_t office;
-    pthread_create(&office, NULL, officeHandler, fd);
+    pthread_join(offices[i], NULL);
   }
-printf("48\n");
+
   close(fd);
+  remove("requests");
 
-  //system("find . -type p -delete");
-
-  free(seats);
-  return 0;
-}
-
-int allocateSeats(unsigned int seatsNum){
-
-    int i;
-    seats = (Seat *)malloc(seatsNum*sizeof(Seat));
-
-    if(seats == NULL){
-    printf("problemo allocating");
-    return -1;
-  }
-
-  return 0;
+  exit(0);
 }
 
 void *officeHandler(void *arg){
+  /*
   int fd = arg;
   int count = 0;
   char str[200];
@@ -72,15 +82,5 @@ void *officeHandler(void *arg){
     count++;
   }
   return NULL;
-}
-
-int readline(int fd, char *str){
-  reading = 1;
-  int n;
-  do{
-    n = read(fd,str,1);
-  }
-  while (n>0 && *str++ != '\0');
-  reading = 0;
-  return (n>0);
+  */
 }
