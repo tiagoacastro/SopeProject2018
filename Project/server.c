@@ -4,7 +4,12 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static Seat room[MAX_ROOM_SEATS];
 static int timeout = 0;
 static Request* request = NULL;
-static newRequest = 0;
+static int newRequest = 0;
+static unsigned int seats;
+
+void alarmHandler(int sig) {
+    timeout = 1;
+}
 
 int main(int argc,char *argv[], char* env[]){
   if(argc != 4){
@@ -22,19 +27,19 @@ int main(int argc,char *argv[], char* env[]){
     return -3;
   }
 
-  unsigned int seats = atoi(argv[1]);
+  seats = atoi(argv[1]);
   unsigned int nOffices = atoi(argv[2]);
   unsigned int timeout = atoi(argv[3]);
 
   if(mkfifo("requests", 0660) == -1){
     printf("Error creating requests FIFO");
-    return -3;
+    return -4;
   }
 
-  int fd;
-  if((fd = open("requests", O_RDONLY | O_NONBLOCK)) == -1){
+  int fd = open("requests", O_RDONLY | O_NONBLOCK);
+  if(fd == -1){
     printf("Error opening FIFO");
-    return -4;
+    return -5;
   }
 
   for(unsigned int i = 0; i < MAX_ROOM_SEATS; i++){
@@ -42,10 +47,13 @@ int main(int argc,char *argv[], char* env[]){
     room[i].available = 1;
   }
 
+  signal(SIGALRM, alarmHandler);
+  alarm((unsigned int) timeout);
+
   pthread_t offices[nOffices];
   int threadErr;
   for(unsigned int t = 0; t < nOffices; t++) {
-      threadErr = pthread_create(&offices[t], NULL, officeHandler, fd);
+      threadErr = pthread_create(&offices[t], NULL, officeHandler, NULL);
       if (threadErr) {
           exit(1);
       }
@@ -64,6 +72,7 @@ int main(int argc,char *argv[], char* env[]){
     pthread_join(offices[i], NULL);
   }
 
+  free(r);
   close(fd);
   remove("requests");
 
@@ -71,16 +80,67 @@ int main(int argc,char *argv[], char* env[]){
 }
 
 void *officeHandler(void *arg){
-  /*
-  int fd = arg;
-  int count = 0;
-  char str[200];
-  while(count < open_time*60){
-    if(!reading){
-      readline(fd,str);
+  do {
+    if (timeout) {
+      sleep(1);
+      break;
     }
-    count++;
+
+    pthread_mutex_lock(&mutex);
+    if(newRequest){
+      newRequest = 0;
+
+      char sn[12];
+      sprintf(sn, "ans%d", request->pid);
+      int fd = open("sn", O_WRONLY);
+
+      requestHandler(fd);
+
+      close(fd);
+    }
+    pthread_mutex_unlock(&mutex);
+
+  } while (1);
+}
+
+void requestHandler(int fd){
+  if(request->seats > MAX_CLI_SEATS){
+      write(fd,"-1",2);
+      return;
   }
-  return NULL;
-  */
+
+  int count = 0;
+  for (unsigned int i = 0; i < seats; i++) {
+    if(request->seatList[i] != 0){
+      count++;
+    }
+  }
+  if(count < request->seats || count > MAX_CLI_SEATS){
+      write(fd,"-2",2);
+      return;
+  }
+
+  for (unsigned int i = 0; i < seats; i++) {
+    if(request->seatList[i] < 1 || request->seatList[i] > seats){
+      write(fd,"-3",2);
+      return;
+    }
+  }
+
+  if(request->seats == 0){
+      write(fd,"-4",2);
+      return;
+  }
+
+  int full=1;
+  for (unsigned int i = 0; i < seats; i++) {
+    if(room[i].available){
+      full = 0;
+      break;
+    }
+  }
+  if(full){
+    write(fd,"-6",2);
+    return;
+  }
 }

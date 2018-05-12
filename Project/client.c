@@ -25,6 +25,9 @@ int main(int argc, char *argv[]) {
   r->seats = atoi(argv[2]);
   char seats[250];
   strcpy(seats, argv[3]);
+  for (unsigned int j = 0; j < MAX_CLI_SEATS; j++) {
+    r->seatList[j] = 0;
+  }
   int i = 0;
   char* token = strtok(seats, " ");
   while (token) {

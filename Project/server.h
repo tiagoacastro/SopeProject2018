@@ -22,6 +22,6 @@ typedef struct {
   int seatList[MAX_CLI_SEATS];
 } Request;
 
-int readline(int fd, char *str);
 void *officeHandler(void *arg);
-int allocateSeats(unsigned int seatsNum);
+void alarmHandler(int sig);
+void requestHandler(int fd);
