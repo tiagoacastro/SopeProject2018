@@ -111,8 +111,8 @@ int writeToClog(char* status){
 
   if (values[0] > 0){
     for(i = 1; i<= values[0]; i++){
-      fprintf(clogFile, "%.5d %.2d.%.2d %.4d \n",getpid(), i, values[0], values[i]);
-      writeToBook(values[i]);
+      writeToCBook(values[i]);
+      fprintf(clogFile, "%.5d %.2d.%.2d %.4d \n",getpid(),values[0], i, values[i]);
       fflush(clogFile);
     }
   }
@@ -139,7 +139,7 @@ int writeToClog(char* status){
   return 0;
 }
 
-int writeToBook(int nrseat) {
+int writeToCBook(int nrseat) {
   bookFile = fopen("cbook.txt", "a");
   fprintf(bookFile, "%.4d \n",nrseat);
   fflush(bookFile);

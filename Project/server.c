@@ -109,11 +109,16 @@ int main(int argc,char *argv[], char* env[]){
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_join(offices[i], NULL);
   }
-  slogFile = fopen("slog.txt", "a");
-  fprintf(slogFile, "SERVER CLOSED");
+
+
+
   close(fd);
   remove("requests");
   pthread_mutex_destroy(&mutex);
+	/*sleep(1000);
+	slogFile = fopen("slog.txt", "a");
+  fprintf(slogFile, "SERVER CLOSED");
+	*/
   free(s);
   exit(0);
 }
@@ -239,6 +244,13 @@ void requestHandler(int fd, int id, Request* r){
   }
 
   writeTicketInfo(id, 0, booked, bookedSeats, r);
+
+	printf("GONNA WRITE ON SBOOK SIR!\n");
+	unsigned int z;
+	for (z = 0; z < booked; z++) {
+		writeToSBook(bookedSeats[z]);
+	}
+
   char message[250];
   char seat[5];
   sprintf(message, "%d", r->seats);
@@ -270,14 +282,16 @@ void writeOffice(int officeNr, int state){
   slogFile = fopen("slog.txt", "a");
   //state = 1 if opened, 0 if closed
   if(state){
-    fprintf(slogFile, "%.2d - OPEN\n", officeNr);
-  }else fprintf(slogFile, "%.2d - CLOSED\n", officeNr);
+    fprintf(slogFile, "%.2d-CLOSED\n", officeNr);
+  }else {
+		fprintf(slogFile, "%.2d-OPEN\n", officeNr);
+	}
 }
 
 void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Request* r) {
   slogFile = fopen("slog.txt", "a");
 
-  fprintf(slogFile, "%.2d-%.5d-%.2d:\n", officeNr, r->pid, r->seats);
+  fprintf(slogFile, "%.2d-%.5d-%.2d:", officeNr, r->pid, r->seats);
 
   unsigned int i;
   for( i = 0; i < r->seats; i++) {
@@ -314,4 +328,13 @@ void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Re
     }
 
     fprintf(slogFile, "\n");
+		fflush(slogFile);
   }
+
+	void writeToSBook(int nrseat) {
+	  sbookFile = fopen("sbook.txt", "a");
+		if (sbookFile == NULL) printf("banana \n");
+	  fprintf(sbookFile, "%.4d \n",nrseat);
+	  fflush(sbookFile);
+	  return;
+	}

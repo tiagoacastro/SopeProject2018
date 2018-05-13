@@ -19,7 +19,7 @@ typedef struct {
 } Request;
 
 int writeToClog(char* status);
-int writeToBook(int nrseat);
+int writeToCBook(int nrseat);
 int writeError(char error[]);
 void alarmHandler(int sig);
 static void sigint_handler(int sig);
