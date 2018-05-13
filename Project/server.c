@@ -141,7 +141,7 @@ void requestHandler(int fd, int id, Request* request){
       printf("has error 1\n");
       return;
   }
-  printf("checked error 1\n");
+
   int count = 0;
   for (unsigned int i = 0; i < seats; i++) {
     if(request->seatList[i] == 0){
@@ -149,14 +149,15 @@ void requestHandler(int fd, int id, Request* request){
     }
     count++;
   }
+
   if(count < request->seats || count > MAX_CLI_SEATS){
       write(fd,"-2",2);
       writeTicketInfo(id, 2, 0, NULL);
       printf("has error 2\n");
       return;
   }
-  printf("checked error 2\n");
 
+  printf("%d\n", seats);
   for (unsigned int i = 0; i < count; i++) {
     if(request->seatList[i] < 1 || request->seatList[i] > seats){
       write(fd,"-3",2);
@@ -165,7 +166,6 @@ void requestHandler(int fd, int id, Request* request){
       return;
     }
   }
-  printf("checked error 3\n");
 
   if(request->seats == 0){
       write(fd,"-4",2);
@@ -173,7 +173,6 @@ void requestHandler(int fd, int id, Request* request){
       printf("has error 4\n");
       return;
   }
-  printf("checked error 4\n");
 
   int full=1;
   for (unsigned int i = 0; i < seats; i++) {
@@ -188,8 +187,7 @@ void requestHandler(int fd, int id, Request* request){
     printf("has error 6\n");
     return;
   }
-  printf("checked error 6\n");
-/*
+
   int booked = 0;
   int bookedSeats[request->seats];
   for(unsigned int i = 0; i < request->seats; i++)
@@ -216,7 +214,6 @@ void requestHandler(int fd, int id, Request* request){
 
     return;
   }
-  printf("checked error 5, no errors\n");
 
   writeTicketInfo(id, 0, booked, bookedSeats);
   char message[250];
@@ -227,7 +224,7 @@ void requestHandler(int fd, int id, Request* request){
     strcat(message, seat);
   }
   printf("msg:\n%s\n", message);
-  //write(fd,message,250);*/
+  //write(fd,message,250);
   write(fd,"0",1);
 }
 
