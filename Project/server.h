@@ -31,4 +31,4 @@ int isSeatFree(Seat *seats, int seatNum);
 void bookSeat(Seat *seats, int seatNum, int clientId);
 void freeSeat(Seat *seats, int seatNum);
 void writeOffice(int officeNr, int state);
-void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[]);
+void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Request* r);
