@@ -149,10 +149,11 @@ void *officeHandler(void *arg){
   } while (1);
   writeOffice(id,0);
   free(s);
+  return NULL;
 }
 
 void requestHandler(int fd, int id, Request* r){
-  Seat *s;
+  Seat *s = NULL;
   if(r->seats > MAX_CLI_SEATS){
       write(fd,"-1",2);
       writeTicketInfo(id, 1, 0, NULL, r);
@@ -249,17 +250,20 @@ void requestHandler(int fd, int id, Request* r){
 }
 
 int isSeatFree(Seat *seats, int seatNum){
+  DELAY();
   return (room[seatNum].available);
 }
 
 void bookSeat(Seat *seats, int seatNum, int clientId){
   room[seatNum].clientPid = clientId;
   room[seatNum].available = 0;
+  DELAY();
 }
 
 void freeSeat(Seat *seats, int seatNum) {
   room[seatNum].available = 1;
   room[seatNum].clientPid = -1;
+  DELAY();
 }
 
 void writeOffice(int officeNr, int state){

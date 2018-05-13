@@ -11,7 +11,7 @@
 
 #define MAX_ROOM_SEATS  9999
 #define MAX_CLI_SEATS   99
-#define DELAY()         sleep(1)
+#define DELAY()         sleep(0)
 
 typedef struct {
   int clientPid;
