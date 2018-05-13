@@ -161,7 +161,9 @@ void requestHandler(int fd, int id, Request* r){
   Seat *s = NULL;
   if(r->seats > MAX_CLI_SEATS){
       write(fd,"-1",2);
+      pthread_mutex_lock(&mutex);
       writeTicketInfo(id, 1, 0, NULL, r);
+      pthread_mutex_unlock(&mutex);
       return;
   }
 
@@ -175,21 +177,27 @@ void requestHandler(int fd, int id, Request* r){
 
   if(count < r->seats || count > MAX_CLI_SEATS){
       write(fd,"-2",2);
+      pthread_mutex_lock(&mutex);
       writeTicketInfo(id, 2, 0, NULL, r);
+      pthread_mutex_unlock(&mutex);
       return;
   }
 
   for (unsigned int i = 0; i < count; i++) {
     if(r->seatList[i] < 1 || r->seatList[i] > seats){
       write(fd,"-3",2);
+      pthread_mutex_lock(&mutex);
       writeTicketInfo(id, 3, 0, NULL, r);
+      pthread_mutex_unlock(&mutex);
       return;
     }
   }
 
   if(r->seats == 0){
       write(fd,"-4",2);
+      pthread_mutex_lock(&mutex);
       writeTicketInfo(id, 4, 0, NULL, r);
+      pthread_mutex_unlock(&mutex);
       return;
   }
 
@@ -207,7 +215,9 @@ void requestHandler(int fd, int id, Request* r){
 
   if(full){
     write(fd,"-6",2);
+    pthread_mutex_lock(&mutex);
     writeTicketInfo(id, 6, 0, NULL, r);
+    pthread_mutex_unlock(&mutex);
     return;
   }
 
@@ -239,16 +249,19 @@ void requestHandler(int fd, int id, Request* r){
       }
     }
     write(fd,"-5",2);
+    pthread_mutex_lock(&mutex);
     writeTicketInfo(id, 5, 0, NULL, r);
+    pthread_mutex_unlock(&mutex);
     return;
   }
-
+  pthread_mutex_lock(&mutex);
   writeTicketInfo(id, 0, booked, bookedSeats, r);
 
 	unsigned int z;
 	for (z = 0; z < booked; z++) {
 		writeToSBook(bookedSeats[z]);
 	}
+  pthread_mutex_unlock(&mutex);
 
   char message[250];
   char seat[5];
