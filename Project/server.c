@@ -16,7 +16,6 @@ void alarmHandler(int sig) {
 }
 
 int main(int argc,char *argv[], char* env[]){
-printf("16\n");
   if(argc != 4){
     printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <open_time>\n");
     return -1;
@@ -43,7 +42,6 @@ printf("16\n");
     printf("Error creating requests FIFO");
     return -4;
   }
-printf("43\n");
   int fd = open("requests", O_RDONLY | O_NONBLOCK);
   if(fd == -1){
     printf("Error opening FIFO");
@@ -52,9 +50,12 @@ printf("43\n");
 
   for(unsigned int i = 0; i < MAX_ROOM_SEATS; i++){
     room[i].clientPid = -1;
-    room[i].available = 1;
+    if(i < seats)
+      room[i].available = 1;
+    else
+      room[i].available = 0;
   }
-printf("54\n");
+
   pthread_t offices[nOffices];
   int threadErr;
   for(unsigned int t = 0; t < nOffices; t++) {
@@ -63,30 +64,36 @@ printf("54\n");
           exit(1);
       }
   }
-printf("63\n");
+
   unsigned int ret = -1;
   Request* r = malloc(sizeof(Request));
   do {
     ret = read(fd,r,sizeof(Request));
-    if (ret > 0) {
+    if (ret > 0 && r->pid != 0) {
       request = r;
-      printf("%d\n",69);
+      /*
       printf("%d\n",request->pid);
-      printf("%d\n",70);
-
+      printf("%d\n",request->seats);
+      for (size_t i = 0; i < MAX_CLI_SEATS; i++) {
+        if(request->seatList[i] == 0)
+          break;
+        printf("%d\n",request->seatList[i]);
+      }
+      */
+      DELAY();
       newRequest = 1;
     }
   } while (!timeout);
-printf("72\n");
+
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_join(offices[i], NULL);
   }
+
   slogFile = fopen("slog.txt", "a");
   fprintf(slogFile, "SERVER CLOSED");
-
-printf("76\n");
   close(fd);
   remove("requests");
+  pthread_mutex_destroy(&mutex);
 
   exit(0);
 }
@@ -94,7 +101,9 @@ printf("76\n");
 void *officeHandler(void *arg){
   int id = ++officeId;
   writeOffice(id, 1);
+  int requestToBook = 0;
   do {
+    requestToBook = 0;
     if (timeout) {
       sleep(1);
       break;
@@ -102,22 +111,21 @@ void *officeHandler(void *arg){
     pthread_mutex_lock(&mutex);
     if(newRequest){
       newRequest = 0;
-
-      char sn[12];
-printf("94\n");
-      sprintf(sn, "ans%d", request->pid);
-printf("96\n");
-      int fd = open(sn, O_WRONLY | O_NONBLOCK);
-printf("98\n");
-      requestHandler(fd);
-printf("100\n");
-      close(fd);
+      requestToBook = 1;
     }
     pthread_mutex_unlock(&mutex);
 
+    if(requestToBook){
+      char sn[12];
+      sprintf(sn, "ans%d", request->pid);
+      /*int fd = open(sn, O_WRONLY | O_NONBLOCK);
+      //requestHandler(fd);
+      close(fd);*/
+    }
+
   } while (1);
-  writeOffice(id,0);
-  }
+    writeOffice(id,0);
+}
 
 void requestHandler(int fd){
   Seat *s;
@@ -222,7 +230,7 @@ void freeSeat(Seat *seats, int seatNum) {
 void writeOffice(int officeNr, int state){
   slogFile = fopen("slog.txt", "a");
   //state = 1 if opened, 0 if closed
-  if(state==0){
+  if(state){
     fprintf(slogFile, "%.2d - CLOSED\n", officeNr);
   }else fprintf(slogFile, "%.2d - OPEN\n", officeNr);
 }

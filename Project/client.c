@@ -42,7 +42,15 @@ int main(int argc, char *argv[]) {
     i++;
     token = strtok(NULL, " ");
   }
+  /*
   printf("%d\n",r->pid);
+  printf("%d\n",r->seats);
+  for (size_t i = 0; i < MAX_CLI_SEATS; i++) {
+    if(r->seatList[i] == 0)
+      break;
+    printf("%d\n",r->seatList[i]);
+  }
+  */
   write(requests,r,sizeof(Request));
 
   close(requests);
@@ -55,7 +63,7 @@ int main(int argc, char *argv[]) {
     printf("Error creating status FIFO\n");
     return -1;
   }
-
+  /*
   int status = open(sn, O_RDONLY);
   if(status == -1){
     printf("Error opening status FIFO\n");
@@ -73,7 +81,7 @@ int main(int argc, char *argv[]) {
   if(ret >= 0)
     writeToClog(msg);
 
-  close(status);
+  close(status);*/
   remove(sn);
 
   return 0;
