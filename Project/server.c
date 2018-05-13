@@ -82,7 +82,6 @@ int main(int argc,char *argv[], char* env[]){
         printf("%d\n",request->seatList[i]);
       }
       */
-      printf("novo request %d\n",request->pid);
       newRequest = 1;
     }
   } while (!timeout);
@@ -124,9 +123,8 @@ void *officeHandler(void *arg){
       char sn[12];
       sprintf(sn, "ans%d", r->pid);
       int fd = open(sn, O_WRONLY);
-      //requestHandler(fd,id, r);
       printf("%d - vou tratar deste %s\n", id, sn);
-      write(fd,sn,sizeof(sn));
+      requestHandler(fd,id, r);
       close(fd);
       pthread_mutex_unlock(&mutex);
     }
@@ -146,9 +144,10 @@ void requestHandler(int fd, int id, Request* request){
   printf("checked error 1\n");
   int count = 0;
   for (unsigned int i = 0; i < seats; i++) {
-    if(request->seatList[i] != 0){
-      count++;
+    if(request->seatList[i] == 0){
+      break;
     }
+    count++;
   }
   if(count < request->seats || count > MAX_CLI_SEATS){
       write(fd,"-2",2);
@@ -158,7 +157,7 @@ void requestHandler(int fd, int id, Request* request){
   }
   printf("checked error 2\n");
 
-  for (unsigned int i = 0; i < seats; i++) {
+  for (unsigned int i = 0; i < count; i++) {
     if(request->seatList[i] < 1 || request->seatList[i] > seats){
       write(fd,"-3",2);
       writeTicketInfo(id, 3, 0, NULL);
@@ -190,7 +189,7 @@ void requestHandler(int fd, int id, Request* request){
     return;
   }
   printf("checked error 6\n");
-
+/*
   int booked = 0;
   int bookedSeats[request->seats];
   for(unsigned int i = 0; i < request->seats; i++)
@@ -228,7 +227,8 @@ void requestHandler(int fd, int id, Request* request){
     strcat(message, seat);
   }
   printf("msg:\n%s\n", message);
-  //write(fd,message,250);
+  //write(fd,message,250);*/
+  write(fd,"0",1);
 }
 
 int isSeatFree(Seat *seats, int seatNum){
@@ -262,7 +262,6 @@ void writeOffice(int officeNr, int state){
 void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[]) {
   slogFile = fopen("slog.txt", "a");
 
-  printf("writeTicketInfo got in!! \n");
   fprintf(slogFile, "%.2d-%.5d-%.2d:\n", officeNr, request->pid, request->seats);
 
   unsigned int i;

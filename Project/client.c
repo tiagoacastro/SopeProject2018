@@ -28,6 +28,13 @@ int main(int argc, char *argv[]) {
     return -3;
   }
 
+  char sn[12];
+  sprintf(sn, "ans%d", pid);
+  if(mkfifo(sn, 0660) == -1){
+    printf("Error creating status FIFO\n");
+    return -1;
+  }
+
   Request* r = malloc(sizeof(Request));
   r->pid = pid;
   r->seats = atoi(argv[2]);
@@ -53,16 +60,7 @@ int main(int argc, char *argv[]) {
   printf("%d a mandar request\n", pid);
   write(requests,r,sizeof(Request));
 
-  close(requests);
-  free(r);
-
   //get status
-  char sn[12];
-  sprintf(sn, "ans%d", pid);
-  if(mkfifo(sn, 0660) == -1){
-    printf("Error creating status FIFO\n");
-    return -1;
-  }
   printf("%d a espera que abram\n", pid);
   int status = open(sn, O_RDONLY);
   if(status == -1){
@@ -88,6 +86,8 @@ int main(int argc, char *argv[]) {
     writeToClog(msg);
     */
   close(status);
+  close(requests);
+  free(r);
   remove(sn);
 
   return 0;
