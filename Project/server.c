@@ -125,7 +125,12 @@ int main(int argc,char *argv[], char* env[]){
 
 void *officeHandler(void *arg){
   int id = ++officeId;
-  writeOffice(id, 1);
+
+  slogFile = fopen("slog.txt", "a");
+
+  fprintf(slogFile, "%.2d-OPEN\n", id);
+  fflush(slogFile);
+
   int requestToBook = 0;
   Request *r = malloc(sizeof (Request));
   Request *s = r;
@@ -152,7 +157,10 @@ void *officeHandler(void *arg){
     }
 
   } while (1);
-  writeOffice(id,0);
+
+  fprintf(slogFile, "%.2d-CLOSED\n", id);
+  fflush(slogFile);
+
   free(s);
   return NULL;
 }
@@ -277,18 +285,7 @@ void freeSeat(Seat *seats, int seatNum) {
   DELAY();
 }
 
-void writeOffice(int officeNr, int state){
-  slogFile = fopen("slog.txt", "a");
-  //state = 1 if opened, 0 if closed
-  if(state){
-    fprintf(slogFile, "%.2d-CLOSED\n", officeNr);
-  }else {
-		fprintf(slogFile, "%.2d-OPEN\n", officeNr);
-	}
-}
-
 void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Request* r) {
-  slogFile = fopen("slog.txt", "a");
 
   fprintf(slogFile, "%.2d-%.5d-%.2d:", officeNr, r->pid, r->seats);
 
@@ -327,12 +324,10 @@ void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Re
     }
 
     fprintf(slogFile, "\n");
-		fflush(slogFile);
   }
 
 	void writeToSBook(int nrseat) {
 	  sbookFile = fopen("sbook.txt", "a");
-		if (sbookFile == NULL) printf("banana \n");
 	  fprintf(sbookFile, "%.4d \n",nrseat);
 	  fflush(sbookFile);
 	  return;

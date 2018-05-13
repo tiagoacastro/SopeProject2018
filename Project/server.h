@@ -30,7 +30,6 @@ void requestHandler(int fd, int id, Request* request);
 int isSeatFree(Seat *seats, int seatNum);
 void bookSeat(Seat *seats, int seatNum, int clientId);
 void freeSeat(Seat *seats, int seatNum);
-void writeOffice(int officeNr, int state);
 void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Request* r);
 void writeToSBook(int nrseat);
 static void sigint_handler(int sig);
