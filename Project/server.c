@@ -10,6 +10,25 @@ FILE * slogFile = NULL;
 FILE * sbookFile = NULL;
 int officeId = 0;
 
+static void sigint_handler(int sig) {
+  char answer;
+
+  signal(sig, SIG_IGN);
+
+  printf(
+    "\n\nDo you want to stop all client processes? (Y to confirm, any other key to continue)\n"
+  );
+
+  scanf("%c%*[^\n]%*c", &answer);
+
+  if (answer == 'y' || answer == 'Y') {
+    remove("requests");
+    exit(0);
+  }
+
+  printf("Resuming...\n");
+}
+
 void alarmHandler(int sig) {
     printf("Time's up! \n");
     timeout = 1;
@@ -27,7 +46,7 @@ int main(int argc,char *argv[], char* env[]){
   }
 
   if(atoi(argv[1]) > MAX_ROOM_SEATS){
-    printf("Number of seats is too high");
+    printf("Number of seats is too high\n");
     return -3;
   }
 
@@ -38,13 +57,23 @@ int main(int argc,char *argv[], char* env[]){
   alarm((unsigned int) endTime);
   signal(SIGALRM, alarmHandler);
 
+  struct sigaction sa;
+  sa.sa_handler = sigint_handler;
+  sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
+
+  if (sigaction(SIGINT, &sa, NULL) == -1) {
+    printf("Unable to install handler\n");
+    return -6;
+  }
+
   if(mkfifo("requests", 0660) == -1){
-    printf("Error creating requests FIFO");
+    printf("Error creating requests FIFO\n");
     return -4;
   }
   int fd = open("requests", O_RDONLY | O_NONBLOCK);
   if(fd == -1){
-    printf("Error opening FIFO");
+    printf("Error opening FIFO\n");
     return -5;
   }
 
@@ -67,35 +96,25 @@ int main(int argc,char *argv[], char* env[]){
 
   unsigned int ret = -1;
   Request* r = malloc(sizeof(Request));
+  Request* s = r;
   int lastpid;
   do {
     ret = read(fd,r,sizeof(Request));
     if (ret > 0 && r->pid != 0 && r->pid != lastpid) {
       request = r;
       lastpid = r->pid;
-      /*
-      printf("%d\n",request->pid);
-      printf("%d\n",request->seats);
-      for (size_t i = 0; i < MAX_CLI_SEATS; i++) {
-        if(request->seatList[i] == 0)
-          break;
-        printf("%d\n",request->seatList[i]);
-      }
-      */
       newRequest = 1;
     }
   } while (!timeout);
-
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_join(offices[i], NULL);
   }
-
   slogFile = fopen("slog.txt", "a");
   fprintf(slogFile, "SERVER CLOSED");
   close(fd);
   remove("requests");
   pthread_mutex_destroy(&mutex);
-
+  free(s);
   exit(0);
 }
 
@@ -104,6 +123,7 @@ void *officeHandler(void *arg){
   writeOffice(id, 1);
   int requestToBook = 0;
   Request *r = malloc(sizeof (Request));
+  Request *s = r;
   do {
     requestToBook = 0;
     if (timeout) {
@@ -119,34 +139,23 @@ void *officeHandler(void *arg){
     pthread_mutex_unlock(&mutex);
 
     if(requestToBook){
-      pthread_mutex_lock(&mutex);
       char sn[12];
       sprintf(sn, "ans%d", r->pid);
       int fd = open(sn, O_WRONLY);
-      printf("%d - vou tratar deste %s\n", id, sn);
       requestHandler(fd,id, r);
       close(fd);
-      pthread_mutex_unlock(&mutex);
     }
 
   } while (1);
-  free(r);
   writeOffice(id,0);
+  free(s);
 }
 
 void requestHandler(int fd, int id, Request* r){
-  printf("%d\n",r->pid);
-  printf("%d\n",r->seats);
-  for (size_t i = 0; i < MAX_CLI_SEATS; i++) {
-    if(r->seatList[i] == 0)
-      break;
-    printf("%d\n",r->seatList[i]);
-  }
   Seat *s;
   if(r->seats > MAX_CLI_SEATS){
       write(fd,"-1",2);
       writeTicketInfo(id, 1, 0, NULL, r);
-      printf("has error 1\n");
       return;
   }
 
@@ -161,7 +170,6 @@ void requestHandler(int fd, int id, Request* r){
   if(count < r->seats || count > MAX_CLI_SEATS){
       write(fd,"-2",2);
       writeTicketInfo(id, 2, 0, NULL, r);
-      printf("has error 2\n");
       return;
   }
 
@@ -169,7 +177,6 @@ void requestHandler(int fd, int id, Request* r){
     if(r->seatList[i] < 1 || r->seatList[i] > seats){
       write(fd,"-3",2);
       writeTicketInfo(id, 3, 0, NULL, r);
-      printf("has error 3\n");
       return;
     }
   }
@@ -177,48 +184,56 @@ void requestHandler(int fd, int id, Request* r){
   if(r->seats == 0){
       write(fd,"-4",2);
       writeTicketInfo(id, 4, 0, NULL, r);
-      printf("has error 4\n");
       return;
   }
 
   int full=1;
+
   for (unsigned int i = 0; i < seats; i++) {
+    pthread_mutex_lock(&mutex);
     if(isSeatFree(s, i)){
       full = 0;
+      pthread_mutex_unlock(&mutex);
       break;
     }
+    pthread_mutex_unlock(&mutex);
   }
+
   if(full){
     write(fd,"-6",2);
     writeTicketInfo(id, 6, 0, NULL, r);
-    printf("has error 6\n");
     return;
   }
-  /*
+
   int booked = 0;
   int bookedSeats[r->seats];
   for(unsigned int i = 0; i < r->seats; i++)
     bookedSeats[i] = -1;
 
   for (unsigned int i = 0; i < count; i++) {
-    //printf("%d\n", r->seatList[i]);
+    pthread_mutex_lock(&mutex);
     if (isSeatFree(s, r->seatList[i]-1)) {
       bookSeat(s, r->seatList[i]-1, r->pid);
       bookedSeats[booked] = r->seatList[i];
       booked++;
-      if(booked == r->seats)
-          break;
+      if(booked == r->seats){
+        pthread_mutex_unlock(&mutex);
+        break;
+      }
     }
+    pthread_mutex_unlock(&mutex);
   }
 
   if(booked < r->seats){
     for (unsigned int i = 0; i < r->seats; i++) {
-      if(bookedSeats[i] != -1)
-        freeSeat(s, bookedSeats[i]);
+      if(bookedSeats[i] != -1){
+        pthread_mutex_lock(&mutex);
+        freeSeat(s, bookedSeats[i]-1);
+        pthread_mutex_unlock(&mutex);
+      }
     }
     write(fd,"-5",2);
     writeTicketInfo(id, 5, 0, NULL, r);
-    printf("has error 5\n");
     return;
   }
 
@@ -230,28 +245,21 @@ void requestHandler(int fd, int id, Request* r){
     sprintf(seat, " %d", r->seatList[i]);
     strcat(message, seat);
   }
-  printf("msg:\t%s\n", message);
-  //write(fd,message,250);*/
-  write(fd,"0",1);
+  write(fd,message,250);
 }
 
 int isSeatFree(Seat *seats, int seatNum){
-  DELAY();
   return (room[seatNum].available);
 }
 
 void bookSeat(Seat *seats, int seatNum, int clientId){
   room[seatNum].clientPid = clientId;
   room[seatNum].available = 0;
-  printf("Booking seat %d\n", seatNum);
-  DELAY();
 }
 
 void freeSeat(Seat *seats, int seatNum) {
   room[seatNum].available = 1;
   room[seatNum].clientPid = -1;
-  printf("Freeing seat %d\n", seatNum);
-  DELAY();
 }
 
 void writeOffice(int officeNr, int state){

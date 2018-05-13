@@ -3,10 +3,14 @@
 static FILE * clogFile = NULL;
 static FILE * bookFile = NULL;
 static int timeout = 0;
-static Request* r;
 
 void alarmHandler(int sig) {
     timeout = 1;
+}
+
+static void sigint_handler(int sig) {
+  remove("requests");
+  exit(0);
 }
 
 int main(int argc, char *argv[]) {
@@ -21,7 +25,16 @@ int main(int argc, char *argv[]) {
   alarm((unsigned int) endTime);
   signal(SIGALRM, alarmHandler);
 
-  //send request
+  struct sigaction sa;
+  sa.sa_handler = sigint_handler;
+  sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
+
+  if (sigaction(SIGINT, &sa, NULL) == -1) {
+    printf("Unable to install handler\n");
+    return -4;
+  }
+
   int requests = open("requests", O_WRONLY);
   if(requests == -1){
     printf("Error opening requests FIFO\n");
@@ -48,20 +61,9 @@ int main(int argc, char *argv[]) {
     i++;
     token = strtok(NULL, " ");
   }
-  /*
-  printf("%d\n",r->pid);
-  printf("%d\n",r->seats);
-  for (size_t i = 0; i < MAX_CLI_SEATS; i++) {
-    if(r->seatList[i] == 0)
-      break;
-    printf("%d\n",r->seatList[i]);
-  }
-  */
-  printf("%d a mandar request\n", pid);
+
   write(requests,r,sizeof(Request));
 
-  //get status
-  printf("%d a espera que abram\n", pid);
   int status = open(sn, O_RDONLY);
   if(status == -1){
     printf("Error opening status FIFO\n");
@@ -69,7 +71,7 @@ int main(int argc, char *argv[]) {
   }
 
   char msg[250] = {0};
-  printf("%d a espera para ler\n", pid);
+
   while (!timeout)
   {
       read(status, msg, sizeof(msg));
@@ -80,11 +82,12 @@ int main(int argc, char *argv[]) {
 
       sleep(1);
   }
-  printf("%d acabou de ler com a mnsg %s\n", pid, msg);
-  /*
-  if(ret >= 0)
+
+  //printf("\n%d acabou de ler com a mnsg %s\n\n", pid, msg);
+
+  if(strlen(msg) > 0)
     writeToClog(msg);
-    */
+
   close(status);
   close(requests);
   free(r);
@@ -140,6 +143,7 @@ int writeToBook(int nrseat) {
   bookFile = fopen("cbook.txt", "a");
   fprintf(bookFile, "%.4d \n",nrseat);
   fflush(bookFile);
+  return 0;
 }
 
 int writeError(char error[]){

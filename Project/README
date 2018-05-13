@@ -1,11 +1,11 @@
 Instructions:
 
 1-  make
-2-  abrir um terminal, e correr no diretorio do projeto ./server <num_room_seats> <num_ticket_offices> <open_time>
-3-  abrir um segundo terminal, e correr no diretorio do projeto ./start config.txt
+2-  open a terminal and run in the project directory: ./server <num_room_seats> <num_ticket_offices> <open_time>
+3-  open a second terminal and run in the project directory: ./start config.txt
 
-to stop any of the programs:  ^C
+to stop any of the programs(fifos are automatically deleted):  ^C
 
 to clean do:  make clean
 
-to delete the fifos: find . -type p -delete 
+to delete the fifos (if for some reason they weren't deleted): find . -type p -delete
