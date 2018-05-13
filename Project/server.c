@@ -104,7 +104,7 @@ void *officeHandler(void *arg){
   int id = ++officeId;
   writeOffice(id, 1);
   int requestToBook = 0;
-  Request* r = malloc(sizeof(Request));
+  Request* r;
   do {
     requestToBook = 0;
     if (timeout) {
@@ -125,14 +125,13 @@ void *officeHandler(void *arg){
       sprintf(sn, "ans%d", r->pid);
       int fd = open(sn, O_WRONLY);
       //requestHandler(fd,id, r);
-        printf("%d - vou tratar deste %s\n", id, sn);
+      printf("%d - vou tratar deste %s\n", id, sn);
       write(fd,sn,sizeof(sn));
       close(fd);
       pthread_mutex_unlock(&mutex);
     }
 
   } while (1);
-  free(r);
   writeOffice(id,0);
 }
 
