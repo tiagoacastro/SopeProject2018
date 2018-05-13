@@ -121,7 +121,7 @@ void *officeHandler(void *arg){
       sprintf(sn, "ans%d", request->pid);
       printf("%d - vou tratar deste %d\n", id, request->pid);
       int fd = open(sn, O_WRONLY | O_NONBLOCK);
-      requestHandler(fd);
+      requestHandler(fd,id);
       close(fd);
     }
     pthread_mutex_unlock(&mutex);
@@ -130,10 +130,11 @@ void *officeHandler(void *arg){
     writeOffice(id,0);
 }
 
-void requestHandler(int fd){
+void requestHandler(int fd, int id){
   Seat *s;
   if(request->seats > MAX_CLI_SEATS){
       write(fd,"-1",2);
+      writeTicketInfo(id, 1, 0, NULL);
       printf("has error 1\n");
       return;
   }
@@ -146,6 +147,7 @@ void requestHandler(int fd){
   }
   if(count < request->seats || count > MAX_CLI_SEATS){
       write(fd,"-2",2);
+      writeTicketInfo(id, 2, 0, NULL);
       printf("has error 2\n");
       return;
   }
@@ -154,6 +156,7 @@ void requestHandler(int fd){
   for (unsigned int i = 0; i < seats; i++) {
     if(request->seatList[i] < 1 || request->seatList[i] > seats){
       write(fd,"-3",2);
+      writeTicketInfo(id, 3, 0, NULL);
       printf("has error 3\n");
       return;
     }
@@ -162,6 +165,7 @@ void requestHandler(int fd){
 
   if(request->seats == 0){
       write(fd,"-4",2);
+      writeTicketInfo(id, 4, 0, NULL);
       printf("has error 4\n");
       return;
   }
@@ -176,6 +180,7 @@ void requestHandler(int fd){
   }
   if(full){
     write(fd,"-6",2);
+    writeTicketInfo(id, 6, 0, NULL);
     printf("has error 6\n");
     return;
   }
@@ -202,12 +207,14 @@ void requestHandler(int fd){
         freeSeat(s, bookedSeats[i]);
     }
     write(fd,"-5",2);
+    writeTicketInfo(id, 5, 0, NULL);
     printf("has error 5\n");
 
     return;
   }
   printf("checked error 5, no errors\n");
 
+  writeTicketInfo(id, 0, booked, bookedSeats);
   char message[250];
   char seat[5];
   sprintf(message, "%d", request->pid);
@@ -217,10 +224,6 @@ void requestHandler(int fd){
   }
   printf("msg:\n%s\n", message);
   //write(fd,message,250);
-  fprintf(slogFile, "%.2d - %.5d\n", officeId);
-
-
-    fprintf(slogFile, "\n", request->pid);
 }
 
 int isSeatFree(Seat *seats, int seatNum){
@@ -250,3 +253,46 @@ void writeOffice(int officeNr, int state){
     fprintf(slogFile, "%.2d - OPEN\n", officeNr);
   }else fprintf(slogFile, "%.2d - CLOSED\n", officeNr);
 }
+
+void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[]) {
+  slogFile = fopen("slog.txt", "a");
+
+  printf("writeTicketInfo got in!! \n");
+  fprintf(slogFile, "%.2d-%.5d-%.2d:\n", officeNr, request->pid, request->seats);
+
+  unsigned int i;
+  for( i = 0; i < request->seats; i++) {
+    fprintf(slogFile, " %.4d", request->seatList[i]);
+  }
+
+  fprintf(slogFile, " -");
+
+  unsigned int j;
+  switch (action) {
+    case 0 :
+      for (j = 0; j < booked; j++) {
+        fprintf(slogFile, " %.4d", bookedSeats[j]);
+      }
+    break;
+    case 1:
+      fprintf(slogFile, " MAX");
+      break;
+    case 2:
+      fprintf(slogFile, " NST");
+      break;
+    case 3:
+      fprintf(slogFile, " IID");
+      break;
+    case 4:
+      fprintf(slogFile, " ERR");
+      break;
+    case 5:
+      fprintf(slogFile, " NAV");
+      break;
+    case 6:
+      fprintf(slogFile, " FUL");
+      break;
+    }
+
+    fprintf(slogFile, "\n");
+  }
