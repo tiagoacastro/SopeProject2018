@@ -245,7 +245,6 @@ void requestHandler(int fd, int id, Request* r){
 
   writeTicketInfo(id, 0, booked, bookedSeats, r);
 
-	printf("GONNA WRITE ON SBOOK SIR!\n");
 	unsigned int z;
 	for (z = 0; z < booked; z++) {
 		writeToSBook(bookedSeats[z]);
