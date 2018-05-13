@@ -119,9 +119,11 @@ void *officeHandler(void *arg){
     if(requestToBook){
       char sn[12];
       sprintf(sn, "ans%d", request->pid);
-      printf("%d - vou tratar deste %d\n", id, request->pid);
       int fd = open(sn, O_WRONLY | O_NONBLOCK);
-      requestHandler(fd,id);
+      //requestHandler(fd,id);
+        printf("%d - vou tratar deste %d\n", id, request->pid);
+      write(fd,sn,sizeof(sn));
+      DELAY();
       close(fd);
     }
     pthread_mutex_unlock(&mutex);

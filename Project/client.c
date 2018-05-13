@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   }
 
   char msg[250] = {0};
-
+  printf("%d a espera para ler\n", pid);
   while (!timeout)
   {
       read(status, msg, sizeof(msg));
@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
       {
         break;
       }
+
   }
   printf("%d acabou de ler com a mnsg %s\n", pid, msg);
   /*
