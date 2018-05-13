@@ -6,6 +6,9 @@ static int timeout = 0;
 static Request* request;
 static int newRequest = 0;
 static unsigned int seats;
+FILE * slogFile = NULL;
+FILE * sbookFile = NULL;
+int officeId = 0;
 
 void alarmHandler(int sig) {
     printf("Time's up! \n");
@@ -78,6 +81,9 @@ printf("72\n");
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_join(offices[i], NULL);
   }
+  slogFile = fopen("slog.txt", "a");
+  fprintf(slogFile, "SERVER CLOSED");
+
 printf("76\n");
   close(fd);
   remove("requests");
@@ -86,6 +92,8 @@ printf("76\n");
 }
 
 void *officeHandler(void *arg){
+  int id = ++officeId;
+  writeOffice(id, 1);
   do {
     if (timeout) {
       sleep(1);
@@ -108,11 +116,11 @@ printf("100\n");
     pthread_mutex_unlock(&mutex);
 
   } while (1);
-}
+  writeOffice(id,0);
+  }
 
 void requestHandler(int fd){
   Seat *s;
-
   if(request->seats > MAX_CLI_SEATS){
       write(fd,"-1",2);
       return;
@@ -185,6 +193,10 @@ void requestHandler(int fd){
     strcat(message, seat);
   }
   write(fd,message,250);
+  fprintf(slogFile, "%.2d - %.5d\n", officeId);
+
+
+    fprintf(slogFile, "\n", request->pid);
 }
 
 int isSeatFree(Seat *seats, int seatNum){
@@ -205,4 +217,12 @@ void freeSeat(Seat *seats, int seatNum) {
   room[seatNum].clientPid = -1;
   printf("Freeing seat\n");
   DELAY();
+}
+
+void writeOffice(int officeNr, int state){
+  slogFile = fopen("slog.txt", "a");
+  //state = 1 if opened, 0 if closed
+  if(state==0){
+    fprintf(slogFile, "%.2d - CLOSED\n", officeNr);
+  }else fprintf(slogFile, "%.2d - OPEN\n", officeNr);
 }
