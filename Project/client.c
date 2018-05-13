@@ -1,8 +1,9 @@
 #include "client.h"
 
-FILE * clogFile = NULL;
-FILE * bookFile = NULL;
+static FILE * clogFile = NULL;
+static FILE * bookFile = NULL;
 static int timeout = 0;
+static Request* r;
 
 void alarmHandler(int sig) {
     timeout = 1;
@@ -30,13 +31,11 @@ int main(int argc, char *argv[]) {
   Request* r = malloc(sizeof(Request));
   r->pid = pid;
   r->seats = atoi(argv[2]);
-  char seats[250];
-  strcpy(seats, argv[3]);
   for (unsigned int j = 0; j < MAX_CLI_SEATS; j++) {
     r->seatList[j] = 0;
   }
   int i = 0;
-  char* token = strtok(seats, " ");
+  char* token = strtok(argv[3], " ");
   while (token) {
     r->seatList[i] = atoi(token);
     i++;
@@ -51,6 +50,7 @@ int main(int argc, char *argv[]) {
     printf("%d\n",r->seatList[i]);
   }
   */
+  printf("%d a mandar request\n", pid);
   write(requests,r,sizeof(Request));
 
   close(requests);
@@ -63,25 +63,29 @@ int main(int argc, char *argv[]) {
     printf("Error creating status FIFO\n");
     return -1;
   }
-  /*
+  printf("%d a espera que abram\n", pid);
   int status = open(sn, O_RDONLY);
   if(status == -1){
     printf("Error opening status FIFO\n");
     return -2;
   }
 
-  ssize_t ret;
-  char msg[250];
+  char msg[250] = {0};
 
-  while (ret < 0 && !timeout)
+  while (!timeout)
   {
-      ret = read(status, msg, 250);
+      read(status, msg, sizeof(msg));
+      if (strlen(msg) > 0)
+      {
+        break;
+      }
   }
-
+  printf("%d acabou de ler com a mnsg %s\n", pid, msg);
+  /*
   if(ret >= 0)
     writeToClog(msg);
-
-  close(status);*/
+    */
+  close(status);
   remove(sn);
 
   return 0;

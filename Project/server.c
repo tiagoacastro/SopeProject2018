@@ -67,10 +67,12 @@ int main(int argc,char *argv[], char* env[]){
 
   unsigned int ret = -1;
   Request* r = malloc(sizeof(Request));
+  int lastpid;
   do {
     ret = read(fd,r,sizeof(Request));
-    if (ret > 0 && r->pid != 0) {
+    if (ret > 0 && r->pid != 0 && r->pid != lastpid) {
       request = r;
+      lastpid = r->pid;
       /*
       printf("%d\n",request->pid);
       printf("%d\n",request->seats);
@@ -80,7 +82,7 @@ int main(int argc,char *argv[], char* env[]){
         printf("%d\n",request->seatList[i]);
       }
       */
-      DELAY();
+      printf("novo request %d\n",request->pid);
       newRequest = 1;
     }
   } while (!timeout);
@@ -113,15 +115,16 @@ void *officeHandler(void *arg){
       newRequest = 0;
       requestToBook = 1;
     }
-    pthread_mutex_unlock(&mutex);
 
     if(requestToBook){
       char sn[12];
       sprintf(sn, "ans%d", request->pid);
-      /*int fd = open(sn, O_WRONLY | O_NONBLOCK);
-      //requestHandler(fd);
-      close(fd);*/
+      printf("%d - vou tratar deste %d\n", id, request->pid);
+      int fd = open(sn, O_WRONLY | O_NONBLOCK);
+      requestHandler(fd);
+      close(fd);
     }
+    pthread_mutex_unlock(&mutex);
 
   } while (1);
     writeOffice(id,0);
@@ -131,9 +134,10 @@ void requestHandler(int fd){
   Seat *s;
   if(request->seats > MAX_CLI_SEATS){
       write(fd,"-1",2);
+      printf("has error 1\n");
       return;
   }
-
+  printf("checked error 1\n");
   int count = 0;
   for (unsigned int i = 0; i < seats; i++) {
     if(request->seatList[i] != 0){
@@ -142,20 +146,26 @@ void requestHandler(int fd){
   }
   if(count < request->seats || count > MAX_CLI_SEATS){
       write(fd,"-2",2);
+      printf("has error 2\n");
       return;
   }
+  printf("checked error 2\n");
 
   for (unsigned int i = 0; i < seats; i++) {
     if(request->seatList[i] < 1 || request->seatList[i] > seats){
       write(fd,"-3",2);
+      printf("has error 3\n");
       return;
     }
   }
+  printf("checked error 3\n");
 
   if(request->seats == 0){
       write(fd,"-4",2);
+      printf("has error 4\n");
       return;
   }
+  printf("checked error 4\n");
 
   int full=1;
   for (unsigned int i = 0; i < seats; i++) {
@@ -166,8 +176,10 @@ void requestHandler(int fd){
   }
   if(full){
     write(fd,"-6",2);
+    printf("has error 6\n");
     return;
   }
+  printf("checked error 6\n");
 
   int booked = 0;
   int bookedSeats[request->seats];
@@ -190,8 +202,11 @@ void requestHandler(int fd){
         freeSeat(s, bookedSeats[i]);
     }
     write(fd,"-5",2);
+    printf("has error 5\n");
+
     return;
   }
+  printf("checked error 5, no errors\n");
 
   char message[250];
   char seat[5];
@@ -200,7 +215,8 @@ void requestHandler(int fd){
     sprintf(message, " %d", request->seatList[i]);
     strcat(message, seat);
   }
-  write(fd,message,250);
+  printf("msg:\n%s\n", message);
+  //write(fd,message,250);
   fprintf(slogFile, "%.2d - %.5d\n", officeId);
 
 
@@ -216,14 +232,14 @@ int isSeatFree(Seat *seats, int seatNum){
 void bookSeat(Seat *seats, int seatNum, int clientId){
   room[seatNum].clientPid = clientId;
   room[seatNum].available = 0;
-  printf("Booking seat\n");
+  printf("Booking seat %d\n", seatNum);
   DELAY();
 }
 
 void freeSeat(Seat *seats, int seatNum) {
   room[seatNum].available = 1;
   room[seatNum].clientPid = -1;
-  printf("Freeing seat\n");
+  printf("Freeing seat %d\n", seatNum);
   DELAY();
 }
 
@@ -231,6 +247,6 @@ void writeOffice(int officeNr, int state){
   slogFile = fopen("slog.txt", "a");
   //state = 1 if opened, 0 if closed
   if(state){
-    fprintf(slogFile, "%.2d - CLOSED\n", officeNr);
-  }else fprintf(slogFile, "%.2d - OPEN\n", officeNr);
+    fprintf(slogFile, "%.2d - OPEN\n", officeNr);
+  }else fprintf(slogFile, "%.2d - CLOSED\n", officeNr);
 }
