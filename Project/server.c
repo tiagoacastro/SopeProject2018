@@ -128,8 +128,10 @@ void *officeHandler(void *arg){
 
   slogFile = fopen("slog.txt", "a");
 
+  pthread_mutex_lock(&mutex);
   fprintf(slogFile, "%.2d-OPEN\n", id);
   fflush(slogFile);
+  pthread_mutex_unlock(&mutex);
 
   int requestToBook = 0;
   Request *r = malloc(sizeof (Request));
@@ -158,8 +160,10 @@ void *officeHandler(void *arg){
 
   } while (1);
 
+  pthread_mutex_lock(&mutex);
   fprintf(slogFile, "%.2d-CLOSED\n", id);
   fflush(slogFile);
+  pthread_mutex_unlock(&mutex);
 
   free(s);
   return NULL;
@@ -262,6 +266,7 @@ void requestHandler(int fd, int id, Request* r){
     pthread_mutex_unlock(&mutex);
     return;
   }
+
   pthread_mutex_lock(&mutex);
   writeTicketInfo(id, 0, booked, bookedSeats, r);
 
@@ -269,6 +274,7 @@ void requestHandler(int fd, int id, Request* r){
 	for (z = 0; z < booked; z++) {
 		writeToSBook(bookedSeats[z]);
 	}
+
   pthread_mutex_unlock(&mutex);
 
   char message[250];
