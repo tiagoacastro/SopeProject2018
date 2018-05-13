@@ -104,6 +104,7 @@ void *officeHandler(void *arg){
   int id = ++officeId;
   writeOffice(id, 1);
   int requestToBook = 0;
+  Request* r = malloc(sizeof(Request));
   do {
     requestToBook = 0;
     if (timeout) {
@@ -114,25 +115,28 @@ void *officeHandler(void *arg){
     if(newRequest){
       newRequest = 0;
       requestToBook = 1;
-    }
-
-    if(requestToBook){
-      char sn[12];
-      sprintf(sn, "ans%d", request->pid);
-      int fd = open(sn, O_WRONLY | O_NONBLOCK);
-      //requestHandler(fd,id);
-        printf("%d - vou tratar deste %d\n", id, request->pid);
-      write(fd,sn,sizeof(sn));
-      DELAY();
-      close(fd);
+      r = request;
     }
     pthread_mutex_unlock(&mutex);
 
+    if(requestToBook){
+      pthread_mutex_lock(&mutex);
+      char sn[12];
+      sprintf(sn, "ans%d", r->pid);
+      int fd = open(sn, O_WRONLY);
+      //requestHandler(fd,id, r);
+        printf("%d - vou tratar deste %s\n", id, sn);
+      write(fd,sn,sizeof(sn));
+      close(fd);
+      pthread_mutex_unlock(&mutex);
+    }
+
   } while (1);
-    writeOffice(id,0);
+  free(r);
+  writeOffice(id,0);
 }
 
-void requestHandler(int fd, int id){
+void requestHandler(int fd, int id, Request* request){
   Seat *s;
   if(request->seats > MAX_CLI_SEATS){
       write(fd,"-1",2);

@@ -26,7 +26,7 @@ typedef struct {
 
 void *officeHandler(void *arg);
 void alarmHandler(int sig);
-void requestHandler(int fd, int id);
+void requestHandler(int fd, int id, Request* request);
 int isSeatFree(Seat *seats, int seatNum);
 void bookSeat(Seat *seats, int seatNum, int clientId);
 void freeSeat(Seat *seats, int seatNum);

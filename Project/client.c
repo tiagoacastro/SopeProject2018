@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
         break;
       }
 
+      sleep(1);
   }
   printf("%d acabou de ler com a mnsg %s\n", pid, msg);
   /*
