@@ -49,6 +49,7 @@ int main(int argc,char *argv[], char* env[]){
     printf("Number of seats is too high\n");
     return -3;
   }
+  slogFile = fopen("slog.txt", "a");
 
   seats = atoi(argv[1]);
   unsigned int nOffices = atoi(argv[2]);
@@ -88,6 +89,7 @@ int main(int argc,char *argv[], char* env[]){
   pthread_t offices[nOffices];
   int threadErr;
   for(unsigned int t = 0; t < nOffices; t++) {
+      fprintf(slogFile, "%.2d-OPEN\n", t+1);
       threadErr = pthread_create(&offices[t], NULL, officeHandler, NULL);
       if (threadErr) {
           exit(1);
@@ -115,23 +117,16 @@ int main(int argc,char *argv[], char* env[]){
   close(fd);
   remove("requests");
   pthread_mutex_destroy(&mutex);
-	/*sleep(1000);
-	slogFile = fopen("slog.txt", "a");
-  fprintf(slogFile, "SERVER CLOSED");
-	*/
+
+  fflush(slogFile);
+  fprintf(slogFile, "SERVER CLOSED\n");
+
   free(s);
   exit(0);
 }
 
 void *officeHandler(void *arg){
   int id = ++officeId;
-
-  slogFile = fopen("slog.txt", "a");
-
-  pthread_mutex_lock(&mutex);
-  fprintf(slogFile, "%.2d-OPEN\n", id);
-  fflush(slogFile);
-  pthread_mutex_unlock(&mutex);
 
   int requestToBook = 0;
   Request *r = malloc(sizeof (Request));
@@ -160,10 +155,7 @@ void *officeHandler(void *arg){
 
   } while (1);
 
-  pthread_mutex_lock(&mutex);
   fprintf(slogFile, "%.2d-CLOSED\n", id);
-  fflush(slogFile);
-  pthread_mutex_unlock(&mutex);
 
   free(s);
   return NULL;
@@ -348,6 +340,5 @@ void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Re
 	void writeToSBook(int nrseat) {
 	  sbookFile = fopen("sbook.txt", "a");
 	  fprintf(sbookFile, "%.4d \n",nrseat);
-	  fflush(sbookFile);
 	  return;
 	}
