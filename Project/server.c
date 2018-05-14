@@ -35,6 +35,7 @@ void alarmHandler(int sig) {
 }
 
 int main(int argc,char *argv[], char* env[]){
+  
   if(argc != 4){
     printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <open_time>\n");
     return -1;
@@ -49,6 +50,8 @@ int main(int argc,char *argv[], char* env[]){
     printf("Number of seats is too high\n");
     return -3;
   }
+
+  resetLogFiles();
   slogFile = fopen("slog.txt", "a");
 
   seats = atoi(argv[1]);
@@ -89,7 +92,7 @@ int main(int argc,char *argv[], char* env[]){
   pthread_t offices[nOffices];
   int threadErr;
   for(unsigned int t = 0; t < nOffices; t++) {
-      fprintf(slogFile, "%.2d-OPEN\n", t+1);
+      fprintf(slogFile, log_to_open, t+1);
       threadErr = pthread_create(&offices[t], NULL, officeHandler, NULL);
       if (threadErr) {
           exit(1);
@@ -155,7 +158,7 @@ void *officeHandler(void *arg){
 
   } while (1);
 
-  fprintf(slogFile, "%.2d-CLOSED\n", id);
+  fprintf(slogFile, log_to_close, id);
 
   free(s);
   return NULL;
@@ -298,11 +301,12 @@ void freeSeat(Seat *seats, int seatNum) {
 
 void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Request* r) {
 
-  fprintf(slogFile, "%.2d-%.5d-%.2d:", officeNr, r->pid, r->seats);
+  fprintf(slogFile, log_booking, officeNr, r->pid, r->seats);
 
   unsigned int i;
   for( i = 0; i < r->seats; i++) {
-    fprintf(slogFile, " %.4d", r->seatList[i]);
+    fprintf(slogFile, " ");
+    fprintf(slogFile, format(WIDTH_SEAT), r->seatList[i]);
   }
 
   fprintf(slogFile, " -");
@@ -311,7 +315,8 @@ void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Re
   switch (action) {
     case 0 :
       for (j = 0; j < booked; j++) {
-        fprintf(slogFile, " %.4d", bookedSeats[j]);
+        fprintf(slogFile, " ");
+        fprintf(slogFile, format(WIDTH_SEAT), bookedSeats[j]);
       }
     break;
     case 1:
@@ -342,3 +347,12 @@ void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Re
 	  fprintf(sbookFile, "%.4d \n",nrseat);
 	  return;
 	}
+
+
+void resetLogFiles(){
+   fclose(fopen("cbook.txt","w"));
+  fclose(fopen("clog.txt","w"));
+   fclose(fopen("sbook.txt","w"));
+   fclose(fopen("slog.txt","w"));
+
+}

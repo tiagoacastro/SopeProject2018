@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
 
 int writeToClog(char* status){
   int i;
+  //fclose(fopen("clog.txt", "w"));
   clogFile=fopen("clog.txt", "a");
   int values[250];
   int t = 0;
@@ -112,7 +113,7 @@ int writeToClog(char* status){
   if (values[0] > 0){
     for(i = 1; i<= values[0]; i++){
       writeToCBook(values[i]);
-      fprintf(clogFile, "%.5d %.2d.%.2d %.4d \n",getpid(),values[0], i, values[i]);
+      fprintf(clogFile, log_client,getpid(),values[0], i, values[i]);
       fflush(clogFile);
     }
   }
@@ -141,13 +142,15 @@ int writeToClog(char* status){
 
 int writeToCBook(int nrseat) {
   bookFile = fopen("cbook.txt", "a");
-  fprintf(bookFile, "%.4d \n",nrseat);
+  fprintf(bookFile, format(WIDTH_SEAT) ,nrseat);
+  fprintf(bookFile, "\n");
   fflush(bookFile);
   return 0;
 }
 
 int writeError(char error[]){
-  fprintf(clogFile, "%.5d %.3s \n",getpid(),error);
+  fprintf(clogFile, log_error ,getpid(),error);
+    fprintf(bookFile, "\n");
   fflush(clogFile);
   return 0;
 }

@@ -6,11 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include "useful.h"
 
-#define WIDTH_PID       5
-#define WIDTH_XXNN      5
-#define WIDTH_SEAT      4
-#define MAX_CLI_SEATS   99
 
 typedef struct {
   int pid;
@@ -23,3 +20,4 @@ int writeToCBook(int nrseat);
 int writeError(char error[]);
 void alarmHandler(int sig);
 static void sigint_handler(int sig);
+

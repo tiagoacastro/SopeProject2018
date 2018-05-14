@@ -8,10 +8,7 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <string.h>
-
-#define MAX_ROOM_SEATS  9999
-#define MAX_CLI_SEATS   99
-#define DELAY()         sleep(0)
+#include "useful.h"
 
 typedef struct {
   int clientPid;
@@ -33,3 +30,4 @@ void freeSeat(Seat *seats, int seatNum);
 void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Request* r);
 void writeToSBook(int nrseat);
 static void sigint_handler(int sig);
+void resetLogFiles();
