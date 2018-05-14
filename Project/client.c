@@ -102,18 +102,12 @@ int main(int argc, char *argv[]) {
 
       sleep(1);
   }
-  printf("1, %d\n", pid);
   if(strlen(msg) > 0)
     writeToClog(msg);
-  printf("2, %d\n", pid);
   close(status);
-  printf("3, %d\n", pid);
   close(requests);
-  printf("4, %d\n", pid);
   free(r);
-  printf("5, %d\n", pid);
   remove(sn);
-  printf("6, %d\n", pid);
   return 0;
 }
 
