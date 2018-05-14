@@ -119,7 +119,6 @@ int main(int argc, char *argv[]) {
 
 int writeToClog(char* status){
   int i;
-  //fclose(fopen("clog.txt", "w"));
   clogFile=fopen("clog.txt", "a");
   int values[250];
   int t = 0;
@@ -162,16 +161,19 @@ int writeToClog(char* status){
 }
 
 int writeToCBook(int nrseat) {
+  printf("ola");
   bookFile = fopen("cbook.txt", "a");
   fprintf(bookFile, format(WIDTH_SEAT) ,nrseat);
   fprintf(bookFile, "\n");
   fflush(bookFile);
+    printf("xau");
+
   return 0;
 }
 
 int writeError(char error[]){
   fprintf(clogFile, log_error , getpid(),atoi(error));
-    fprintf(bookFile, "\n");
+  fprintf(clogFile, "\n");
   fflush(clogFile);
   return 0;
 }
