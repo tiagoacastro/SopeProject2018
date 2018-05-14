@@ -22,11 +22,9 @@ static void sigint_handler(int sig) {
   scanf("%c%*[^\n]%*c", &answer);
 
   if (answer == 'y' || answer == 'Y') {
-    remove("requests");
-    exit(0);
-  }
-
-  printf("Resuming...\n");
+    printf("Time's up! \n");
+    timeout = 1;
+  } else printf("Resuming...\n");
 }
 
 void alarmHandler(int sig) {
@@ -35,7 +33,7 @@ void alarmHandler(int sig) {
 }
 
 int main(int argc,char *argv[], char* env[]){
-  
+
   if(argc != 4){
     printf("wrong arguments: server <num_room_seats> <num_ticket_offices> <open_time>\n");
     return -1;
@@ -115,14 +113,14 @@ int main(int argc,char *argv[], char* env[]){
     pthread_join(offices[i], NULL);
   }
 
-
-
   close(fd);
   remove("requests");
   pthread_mutex_destroy(&mutex);
 
   fflush(slogFile);
   fprintf(slogFile, "SERVER CLOSED\n");
+
+  fclose(slogFile);
 
   free(s);
   exit(0);
