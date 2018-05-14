@@ -6,19 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-
-#define MAX_CLI_SEATS   99
-#define WIDTH_PID 5
-#define WIDTH_XXNN 5
-#define WIDTH_SEAT 4
-#define xstr(x) str(x)
-#define str(x) #x
-#define format(x) "%0" xstr(x) "d"
-#define log_to_open format(2) "-OPEN\n"
-#define log_to_close format(2) "-CLOSE\n"
-#define log_booking format(2) "-" format(WIDTH_PID) "-" format(2) ":"
-#define log_client format(WIDTH_PID) " " format(2) "." format(2) " " format(WIDTH_SEAT) "\n"
-#define log_error format(WIDTH_PID) " " format(3)
+#include "useful.h"
 
 typedef struct {
   int pid;
@@ -181,7 +169,7 @@ int writeToCBook(int nrseat) {
 }
 
 int writeError(char error[]){
-  fprintf(clogFile, log_error ,getpid(),error);
+  fprintf(clogFile, log_error , getpid(),atoi(error));
     fprintf(bookFile, "\n");
   fflush(clogFile);
   return 0;
