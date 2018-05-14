@@ -147,7 +147,7 @@ int writeToClog(char* status){
   if (values[0] > 0){
     for(i = 1; i<= values[0]; i++){
       writeToCBook(values[i]);
-      fprintf(clogFile, log_client,getpid(),values[0], i, values[i]);
+      fprintf(clogFile, log_client,getpid(), i, values[0], values[i]);
       fflush(clogFile);
     }
   }
