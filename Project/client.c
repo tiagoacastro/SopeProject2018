@@ -161,12 +161,10 @@ int writeToClog(char* status){
 }
 
 int writeToCBook(int nrseat) {
-  printf("ola");
   bookFile = fopen("cbook.txt", "a");
   fprintf(bookFile, format(WIDTH_SEAT) ,nrseat);
   fprintf(bookFile, "\n");
   fflush(bookFile);
-    printf("xau");
 
   return 0;
 }
