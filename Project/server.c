@@ -1,4 +1,39 @@
-#include "server.h"
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <string.h>
+
+#define MAX_ROOM_SEATS  9999
+#define MAX_CLI_SEATS   99
+#define DELAY()         sleep(0)
+#define WIDTH_PID 5
+#define WIDTH_XXNN 5
+#define WIDTH_SEAT 4
+#define xstr(x) str(x)
+#define str(x) #x
+#define format(x) "%0" xstr(x) "d"
+#define log_to_open format(2) "-OPEN\n"
+#define log_to_close format(2) "-CLOSE\n"
+#define log_booking format(2) "-" format(WIDTH_PID) "-" format(2) ":"
+#define log_client format(WIDTH_PID) " " format(2) "." format(2) " " format(WIDTH_SEAT) "\n"
+#define log_error format(WIDTH_PID) " " format(3)
+
+typedef struct {
+  int clientPid;
+  int available;
+} Seat;
+
+typedef struct {
+  int pid;
+  int seats;
+  int seatList[MAX_CLI_SEATS];
+} Request;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static Seat room[MAX_ROOM_SEATS];
@@ -9,6 +44,17 @@ static unsigned int seats;
 FILE * slogFile = NULL;
 FILE * sbookFile = NULL;
 int officeId = 0;
+
+void *officeHandler(void *arg);
+void alarmHandler(int sig);
+void requestHandler(int fd, int id, Request* request);
+int isSeatFree(Seat *seats, int seatNum);
+void bookSeat(Seat *seats, int seatNum, int clientId);
+void freeSeat(Seat *seats, int seatNum);
+void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Request* r);
+void writeToSBook(int nrseat);
+static void sigint_handler(int sig);
+void resetLogFiles();
 
 static void sigint_handler(int sig) {
   char answer;
@@ -22,7 +68,7 @@ static void sigint_handler(int sig) {
   scanf("%c%*[^\n]%*c", &answer);
 
   if (answer == 'y' || answer == 'Y') {
-    printf("Time's up! \n");
+    printf("Time's up!\n");
     timeout = 1;
   } else printf("Resuming...\n");
 }
@@ -343,13 +389,14 @@ void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Re
 	void writeToSBook(int nrseat) {
 	  sbookFile = fopen("sbook.txt", "a");
 	  fprintf(sbookFile, "%.4d \n",nrseat);
+    fflush(sbookFile);
 	  return;
 	}
 
 
 void resetLogFiles(){
    fclose(fopen("cbook.txt","w"));
-  fclose(fopen("clog.txt","w"));
+   fclose(fopen("clog.txt","w"));
    fclose(fopen("sbook.txt","w"));
    fclose(fopen("slog.txt","w"));
 
