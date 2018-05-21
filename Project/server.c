@@ -284,7 +284,7 @@ void requestHandler(int fd, int id, Request* r){
   char seat[5];
   sprintf(message, "%d", r->seats);
   for (unsigned int i = 0; i < count; i++) {
-    sprintf(seat, " %d", r->seatList[i]);
+    sprintf(seat, " %d", bookedSeats[i]);
     strcat(message, seat);
   }
   write(fd,message,250);
@@ -312,7 +312,9 @@ void writeTicketInfo(int officeNr, int action, int booked, int bookedSeats[], Re
   fprintf(slogFile, log_booking, officeNr, r->pid, r->seats);
 
   unsigned int i;
-  for( i = 0; i < r->seats; i++) {
+  for( i = 0; i < MAX_CLI_SEATS; i++) {
+    if(r->seatList[i] == 0)
+      break;
     fprintf(slogFile, " ");
     fprintf(slogFile, format(WIDTH_SEAT), r->seatList[i]);
   }
