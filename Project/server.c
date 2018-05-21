@@ -18,9 +18,10 @@ static int timeout = 0;
 static Request* request;
 static int newRequest = 0;
 static unsigned int seats;
-FILE * slogFile = NULL;
-FILE * sbookFile = NULL;
-int officeId = 0;
+static FILE * slogFile = NULL;
+static FILE * sbookFile = NULL;
+static int officeId = 0;
+static int occupied;
 
 static void sigint_handler(int sig) {
   char answer;
@@ -68,6 +69,8 @@ int main(int argc,char *argv[], char* env[]){
   unsigned int nOffices = atoi(argv[2]);
   unsigned int endTime = atoi(argv[3]);
 
+  occupied = nOffices;
+
   alarm((unsigned int) endTime);
   signal(SIGALRM, alarmHandler);
 
@@ -113,12 +116,14 @@ int main(int argc,char *argv[], char* env[]){
   Request* r = malloc(sizeof(Request));
   int lastpid;
   do {
+    if(occupied != 0){
     ret = read(fd,r,sizeof(Request));
     if (ret > 0 && r->pid != 0 && r->pid != lastpid) {
       request = r;
       lastpid = r->pid;
       newRequest = 1;
     }
+  }
   } while (!timeout);
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_join(offices[i], NULL);
@@ -155,6 +160,7 @@ void *officeHandler(void *arg){
       newRequest = 0;
       requestToBook = 1;
       memcpy(r, request, sizeof(Request));
+      occupied--;
     }
     pthread_mutex_unlock(&mutex2);
 
@@ -164,6 +170,7 @@ void *officeHandler(void *arg){
       int fd = open(sn, O_WRONLY);
       requestHandler(fd,id, r);
       close(fd);
+      occupied++;
     }
 
   } while (1);
