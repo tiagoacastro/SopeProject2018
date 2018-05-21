@@ -11,6 +11,8 @@
 #include "server.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mutex3 = PTHREAD_MUTEX_INITIALIZER;
 static Seat room[MAX_ROOM_SEATS];
 static int timeout = 0;
 static Request* request;
@@ -109,7 +111,6 @@ int main(int argc,char *argv[], char* env[]){
 
   unsigned int ret = -1;
   Request* r = malloc(sizeof(Request));
-  Request* s = r;
   int lastpid;
   do {
     ret = read(fd,r,sizeof(Request));
@@ -126,13 +127,15 @@ int main(int argc,char *argv[], char* env[]){
   close(fd);
   remove("requests");
   pthread_mutex_destroy(&mutex);
+  pthread_mutex_destroy(&mutex2);
+  pthread_mutex_destroy(&mutex3);
 
   fflush(slogFile);
   fprintf(slogFile, "SERVER CLOSED\n");
 
   fclose(slogFile);
 
-  free(s);
+  free(r);
   exit(0);
 }
 
@@ -141,20 +144,19 @@ void *officeHandler(void *arg){
 
   int requestToBook = 0;
   Request *r = malloc(sizeof (Request));
-  Request *s = r;
   do {
     requestToBook = 0;
     if (timeout) {
       sleep(1);
       break;
     }
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex2);
     if(newRequest){
       newRequest = 0;
       requestToBook = 1;
-      r = request;
+      memcpy(r, request, sizeof(Request));
     }
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutex2);
 
     if(requestToBook){
       char sn[12];
@@ -168,7 +170,7 @@ void *officeHandler(void *arg){
 
   fprintf(slogFile, log_to_close, id);
 
-  free(s);
+  free(r);
   return NULL;
 }
 
@@ -176,9 +178,9 @@ void requestHandler(int fd, int id, Request* r){
   Seat *s = NULL;
   if(r->seats > MAX_CLI_SEATS){
       write(fd,"-1",2);
-      pthread_mutex_lock(&mutex);
+      pthread_mutex_lock(&mutex3);
       writeTicketInfo(id, 1, 0, NULL, r);
-      pthread_mutex_unlock(&mutex);
+      pthread_mutex_unlock(&mutex3);
       return;
   }
 
@@ -192,27 +194,27 @@ void requestHandler(int fd, int id, Request* r){
 
   if(count < r->seats || count > MAX_CLI_SEATS){
       write(fd,"-2",2);
-      pthread_mutex_lock(&mutex);
+      pthread_mutex_lock(&mutex3);
       writeTicketInfo(id, 2, 0, NULL, r);
-      pthread_mutex_unlock(&mutex);
+      pthread_mutex_unlock(&mutex3);
       return;
   }
 
   for (unsigned int i = 0; i < count; i++) {
     if(r->seatList[i] < 1 || r->seatList[i] > seats){
       write(fd,"-3",2);
-      pthread_mutex_lock(&mutex);
+      pthread_mutex_lock(&mutex3);
       writeTicketInfo(id, 3, 0, NULL, r);
-      pthread_mutex_unlock(&mutex);
+      pthread_mutex_unlock(&mutex3);
       return;
     }
   }
 
   if(r->seats == 0){
       write(fd,"-4",2);
-      pthread_mutex_lock(&mutex);
+      pthread_mutex_lock(&mutex3);
       writeTicketInfo(id, 4, 0, NULL, r);
-      pthread_mutex_unlock(&mutex);
+      pthread_mutex_unlock(&mutex3);
       return;
   }
 
@@ -230,9 +232,9 @@ void requestHandler(int fd, int id, Request* r){
 
   if(full){
     write(fd,"-6",2);
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex3);
     writeTicketInfo(id, 6, 0, NULL, r);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutex3);
     return;
   }
 
@@ -264,13 +266,13 @@ void requestHandler(int fd, int id, Request* r){
       }
     }
     write(fd,"-5",2);
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex3);
     writeTicketInfo(id, 5, 0, NULL, r);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutex3);
     return;
   }
 
-  pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&mutex3);
   writeTicketInfo(id, 0, booked, bookedSeats, r);
 
 	unsigned int z;
@@ -278,7 +280,7 @@ void requestHandler(int fd, int id, Request* r){
 		writeToSBook(bookedSeats[z]);
 	}
 
-  pthread_mutex_unlock(&mutex);
+  pthread_mutex_unlock(&mutex3);
 
   char message[250];
   char seat[5];
