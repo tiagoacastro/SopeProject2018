@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   }
   int i = 0;
   char* token = strtok(argv[3], " ");
-  while (token) {
+  while (token && i < MAX_CLI_SEATS) {
     r->seatList[i] = atoi(token);
     i++;
     token = strtok(NULL, " ");

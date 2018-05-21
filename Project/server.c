@@ -128,18 +128,14 @@ int main(int argc,char *argv[], char* env[]){
   for (unsigned int i = 0; i < nOffices; i++) {
     pthread_join(offices[i], NULL);
   }
-
   close(fd);
   remove("requests");
   pthread_mutex_destroy(&mutex);
   pthread_mutex_destroy(&mutex2);
   pthread_mutex_destroy(&mutex3);
-
   fflush(slogFile);
   fprintf(slogFile, "SERVER CLOSED\n");
-
   fclose(slogFile);
-
   free(r);
   exit(0);
 }
@@ -176,7 +172,6 @@ void *officeHandler(void *arg){
   } while (1);
 
   fprintf(slogFile, log_to_close, id);
-
   free(r);
   return NULL;
 }

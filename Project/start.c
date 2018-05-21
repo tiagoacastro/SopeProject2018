@@ -1,18 +1,18 @@
 /**
  * OPERATING SYSTEMS (EIC0027 - SOPE) / MIEIC / FEUP
  * TP2, 2017/2018
- *
+ * 
  * This file provides the means to create a set of client processes in order to ease both the
  * development and the evaluation of TP2. The program takes its input from a configuration file,
- * whose path is provided as a command line argument. The execution can be halted at any time by
+ * whose path is provided as a command line argument. The execution can be halted at any time by 
  * pressing Ctrl+C (sending a SIGINT signal), and it will be either terminated or resumed depending
  * on whether the user confirms the intention to leave (Y/y) or not (any other key), respectively.
- *
+ * 
  * The program is structured as follows:
- *
- *
+ * 
+ * 
  *      (process group G1)                     (process group G2)
- *                                               ,------------,
+ *                                               ,------------, 
  *                                               |  setpgrp() |
  *      __________________                       |            v          redirect stdin
  *     "                  "      fork()       ,~~~~~~~~~~~~~~~~~~, --------------------------,
@@ -20,13 +20,13 @@
  *     "__________________"                   "~~~~~~~~~~~~~~~~~~" <-------------------------'
  *              '                                    /  |  \
  *              '                                   /   |   \
- *              '  sigaction(SIGINT, ...)          /    |    \
+ *              '  sigaction(SIGINT, ...)          /    |    \ 
  *              '                                 /     |     \
  *              '                                /      |      \
  *              V
  *   _______________________             fork() + execlp("client", ...)
  *  |                       |
- *  |    SIGINT HANDLER     |                /          |          \
+ *  |    SIGINT HANDLER     |                /          |          \ 
  *  |-----------------------|               /           |           \
  *  | (send SIGSTOP to G2)  |              /            |            \
  *  |    End processes?     |             /    ...      |     ...     \
@@ -44,7 +44,7 @@
  *  |     +                 |
  *  |  exit(0)              |
  *  |_______________________|
- *
+ * 
  *
  * The PARENT process is the main process (created by the terminal to run this program), and is the
  * group leader of its process group (i.e., its PID is the same as the PGID). The terminal sends any
@@ -53,25 +53,25 @@
  * process group [G2] to avoid receiving those signals. The PARENT process has a handler for SIGINT
  * signal that enables to halt execution (Ctrl+C), and then stop execution (Y/y) or resume it (any
  * other key) by sending, respectively, signals SIGSTOP, SIGINT and SIGCONT to process group G2.
- *
+ * 
  * The LEADER process, a child process of the PARENT process, is responsible for setting a new
  * process group [setpgrp()] to create two separate signal handling domains, and for creating a new
  * process for each client (to execute the "client" program [fork() + execlp("client", ...)]). In
  * order to ease input reading (through C library functions), stdin is redirected to the file given.
- *
+ * 
  * All other processes are clients that receive their configuration through command line arguments.
  * Their exit status is collected through handle_zombies() function, and the exit status of both the
  * LEADER and the PARENT processes reflect their success: it is only zero (success) if the exit
  * status of all other processes was also zero.
- *
- *
+ * 
+ * 
  * *** INPUT FORMAT ***
- *
+ * 
  * The configuration file must have the following format (any additional whitespaces are ignored):
- *
+ * 
  * <start delay in microseconds (us)> <timeout in milliseconds> <number of seats wanted>
  * <list of seat preferences>
- *
+ * 
  * where the list of seat preferences is composed of a set of seat numbers followed by END.
  */
 
@@ -125,7 +125,7 @@
 
 /**
  * @brief Enumeration to increase the readability of exit status.
- *
+ * 
  */
 enum TP2_Exit_Status {
   INVALID_CMD_ARGS = 1,                 // the set of arguments is invalid
@@ -140,7 +140,7 @@ enum TP2_Exit_Status {
 
 /**
  * @brief Enumeration to increase the readability of read_client_info() function's return status.
- *
+ * 
  */
 enum ReadClientInfoStatus {
   INPUT_ENDED = 0,                      // EOF reached
@@ -154,7 +154,7 @@ enum ReadClientInfoStatus {
 
 /**
  * @brief Structure to hold the required information about a given client.
- *
+ * 
  *            seq_no: relative order number within the file (useful for error messages);
  *          delay_us: the time offset, in microseconds and relative to the previous client, when the
  *                    client should run [before invoking fork()];
@@ -167,7 +167,8 @@ struct client_info {
   int delay_us;                         // delay in microseconds
   int timeout_ms;                       // client timeout in milliseconds
   int num_wanted_seats;                 // number of seats/tickets wanted
-  int preferences[MAX_CLI_SEATS];       // list of preferences (seat numbers)
+  int preferences[MAX_CLI_SEATS*2];     // list of preferences (seat numbers)
+  int npreferences;                     // length of the list of preferences
 };
 
 // global variable holding the PGID of all client processes and of the LEADER process [G2]
@@ -192,7 +193,7 @@ static int main_loop();
  * @brief Prints an error message to standard error.
  *
  * if errno is set, sterror() is used to provide a textual representation of it.
- *
+ * 
  * @param fmt Format (as of printf).
  */
 static void log_error(const char *fmt, ...) {
@@ -215,7 +216,7 @@ static void log_error(const char *fmt, ...) {
   // if errno is set, include the corresponding error string
   if(errno != 0)
     fprintf(stderr, ": %s", strerror(errno));
-
+  
   // print the epilogue
   fprintf(
     stderr,
@@ -229,10 +230,10 @@ static void log_error(const char *fmt, ...) {
 
 /**
  * @brief SIGINT handler.
- *
+ * 
  * Handles SIGINT from the terminal (sent to all processes within process group G1) and stops the
  * execution of all child processes (put in process group G2).
- *
+ * 
  * @param signo The signal being received.
  */
 static void sigint_handler(int signo) {
@@ -298,7 +299,7 @@ int main(int argc, char* argv[]) {
 
     // and close the file
     close(fd);
-
+    
     return SIG_HANDLER_ERR;
   }
 
@@ -307,7 +308,7 @@ int main(int argc, char* argv[]) {
     /* failure */
     case -1:
       log_error("Unable to create LEADER process");
-
+      
       ret = FORK_FAILED;
 
       break;
@@ -324,7 +325,7 @@ int main(int argc, char* argv[]) {
 
         // and close the file
         close(fd);
-
+        
         return SIG_HANDLER_ERR;
       }
 
@@ -362,14 +363,14 @@ int main(int argc, char* argv[]) {
 
 /**
  * @brief Redirects standard input and closes the file descriptor (if valid).
- *
+ * 
  * This function redirects the standard input to a given file descriptor. The function checks
  * whether the file descriptor is valid and if the redirection succeeded. The file descriptor is
  * closed in either way, unless it is not valid: on success, it is no longer needed; on failure, the
  * program will terminate.
- *
+ * 
  * @param fd The file descriptor that the standard input (STDIN_FILENO) should be redirected to.
- *
+ * 
  * @return A boolean indicating whether redirection succeeded or failed.
  */
 static bool redirect_stdin(int fd) {
@@ -400,17 +401,17 @@ static bool redirect_stdin(int fd) {
 
 /**
  * @brief Reads the information respecting a given client.
- *
+ * 
  * read_client_info attempts to read the required client information in the following format:
  *    <start delay in us> <timeout in ms> <no. of seats/tickets wanted> <list of seat preferences>.
- *
+ * 
  * Note: the list of seat preferences ends when a terminator string is found (macro PREF_LIST_END).
- *
+ * 
  * If an error occurs, the client number (relative order within the file) is printed along an error
  * message; if the error regards a seat number, its index is also printed.
- *
+ * 
  * @param ci A pointer to the struct client_info object that is to be set.
- *
+ * 
  * @return int On success, the size of the list; on failure, an error code (negative value).
  */
 static int read_client_info(struct client_info *ci) {
@@ -431,7 +432,10 @@ static int read_client_info(struct client_info *ci) {
   ci->seq_no = ++seq_no;
 
   // clear list of preferences
-  memset(ci->preferences, 0xFF, sizeof(ci->preferences));
+  memset(ci->preferences, 0x00, sizeof(ci->preferences));
+
+  // start with an empty list of preferences
+  ci->npreferences = 0;
 
   // if the start delay could not be read or if it is invalid
   if(((ret = scanf("%d", &ci->delay_us)) != 1) || (ci->delay_us < 0)) {
@@ -493,6 +497,8 @@ static int read_client_info(struct client_info *ci) {
       return INVALID_SEAT_NUMBER;
     }
 
+
+
 #ifdef ADDITIONAL_CHECK
     // check if the seat number is valid
     if ((ci->preferences[idx] < 1) || (ci->preferences[idx] > MAX_ROOM_SEATS)) {
@@ -506,7 +512,7 @@ static int read_client_info(struct client_info *ci) {
     }
 #endif
   }
-  while (ci->preferences[idx] >= 0);
+  while (idx < sizeof(ci->preferences)/sizeof(ci->preferences[0]));
 
 #ifdef ADDITIONAL_CHECK
   // check if the list of seat preferences is large enough for the number of seats/tickets requested
@@ -520,19 +526,21 @@ static int read_client_info(struct client_info *ci) {
   }
 #endif
 
+  ci->npreferences = idx;
+
   // return the size of the list of preferences
   return idx;
 }
 
 /**
  * @brief Create a client process and execute it.
- *
+ * 
  * This function creates a new process to run a client program and passes its configuration through
  * command line argument list:
  *   <prog. name> <no. of req. tickets> <list of preferences (comma separated d-digit seat numbers)>
- *
+ * 
  * @param ci A pointer to constant object containing the client information.
- *
+ * 
  * @return pid_t The PID of the process created or -1 if fork() failed.
  */
 static pid_t create_client_process(const struct client_info *ci) {
@@ -541,26 +549,26 @@ static pid_t create_client_process(const struct client_info *ci) {
   char preferences[MAX_PREFERENCES_LEN];
   pid_t pid;
   int i, idx;
-
+  
   // create a new process
   switch((pid = fork())) {
     /* failure */
     case -1:
       log_error("Unable to create CLIENT process");
-
+      
       break;
-
+    
     /* child */
     case 0:
       // create the argument string that holds the client timeout
-      sprintf(timeout, "%d", ci->timeout_ms);
+      snprintf(timeout, sizeof(timeout), "%d", ci->timeout_ms);
 
       // create the argument string that holds the number of seats/tickets wanted
-      sprintf(num_wanted_seats, "%d", ci->num_wanted_seats);
+      snprintf(num_wanted_seats, sizeof(num_wanted_seats), "%d", ci->num_wanted_seats);
 
       // create the argument string that holds the list of preferences
-      for(i = 0, idx = 0; i < MAX_ROOM_SEATS && ci->preferences[i] >= 0; ++i)
-        idx += sprintf(&preferences[idx], "%d ", ci->preferences[i]);
+      for(i = 0, idx = 0; i < MAX_ROOM_SEATS && i < ci->npreferences; ++i)
+        idx += snprintf(&preferences[idx], MAX_PREFERENCES_LEN - idx, "%d ", ci->preferences[i]);
 
       // replace last space of the list of preferences by the null character
       preferences[idx-1] = '\0';
@@ -590,15 +598,15 @@ static pid_t create_client_process(const struct client_info *ci) {
 
 /**
  * @brief Waits for child processes to avoid any zombies.
- *
+ * 
  * This function behaves differently depending on whether the WNOHANG flag has been set:
  *   1) if set, reads the exit status of all zombie processes (return value > 0);
  *   2) if not set, waits for any child processes (return value > -1).
- *
+ * 
  * In either case, if an interrupt has been raised, errno is cleared and waitpid is invoked again.
- *
+ * 
  * @param flags Any flags supported by waitpid.
- *
+ * 
  * @return int The combined exit status (a binary or) of all child processes that have ended.
  */
 static int handle_zombies(int flags) {
@@ -621,17 +629,17 @@ static int handle_zombies(int flags) {
 
     ret |= status;
   }
-
+  
   // return the combined exit status
   return ret;
 }
 
 /**
  * @brief Main loop for the LEADER process.
- *
+ * 
  * The function runs while there are clients to be setup, and, for each one of them, goes to sleep
  * in order to introduce the required delay and creates a new process to execute it.
- *
+ * 
  * @return int The combined exit status (a binary or) of all child processes that have ended.
  */
 static int main_loop() {
@@ -664,7 +672,7 @@ static int main_loop() {
     printf("#Seats/Tickets: %d\nPreferences: ", ci.num_wanted_seats);
 
     // list of preferences
-    for(i = 0; (i < MAX_ROOM_SEATS) && (ci.preferences[i] >= 0); ++i)
+    for(i = 0; (i < MAX_ROOM_SEATS) && (i < ci.npreferences); ++i)
       printf("%d ", ci.preferences[i]);
 
     printf(
