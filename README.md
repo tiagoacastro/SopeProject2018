@@ -1,6 +1,6 @@
 # FEUP-SOPE
 
-### Project Infos
+### Project Info
 * **Date:** 2nd Year, 2nd Semester, 2017/2018
 * **Topic:** Simple C ticket booth server and client programs using mutexes and semaphores for async buy
 * **Subject:** Sistemas Operativos (SOPE) | Operative Systems
