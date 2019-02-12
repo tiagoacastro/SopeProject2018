@@ -5,4 +5,4 @@
 * **Topic:** Simple C ticket booth server and client programs using mutexes and semaphores for async buy
 * **Subject:** Sistemas Operativos (SOPE) | Operative Systems
 * **Subject Link:** https://sigarra.up.pt/feup/pt/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=399893
-* **In colaboration with:** [João Malheiro](joaomalheiro) and [Beatriz Mendes](https://github.com/smbea)
+* **In colaboration with:** [João Malheiro](https://github.com/joaomalheiro) and [Beatriz Mendes](https://github.com/smbea)
